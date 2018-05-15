@@ -1,0 +1,10 @@
+{
+  "name": "ITP.js",
+  "version": "1.0.0",
+  "devDependencies": {
+    "flow-bin": "^0.41.0"
+  },
+  "scripts": {
+    "flow": "flow"
+  }
+}
