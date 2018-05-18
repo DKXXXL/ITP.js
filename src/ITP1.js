@@ -54,9 +54,22 @@ let type_checking = (ctx: Context, exp : pttm) : ?ty => {
 }
 
 
-let term_finding = (ctx:Context, target : ty) : ?pttm => {
+let _term_finding = (rctx:Dict<ty, number>, varNo : number, target : ty) : ?pttm => {
     if(target.type === "TArrow") {
+        const _body = _term_finding(_add_to_dict(target.domain, varNo, rctx), varNo + 1, target.codomain);
+        if(_body !== null && _body !== undefined) {
+            return {type: "abs", v : varNo, domty : target.domain,  body: _body};
+        } 
+        return undefined;
+    } else if(target.type === "TVar") {
+        // simple find
+        const variableNumber = _find_in_dict(x => obeq(x, target), rctx);
+        if(variableNumber !== null && variableNumber !== undefined) {
+            return {type: "var", t : variableNumber};
+        }
         
+        // not yet try to construct
+        return undefined;
     }
 }
 
