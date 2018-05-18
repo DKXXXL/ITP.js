@@ -35,7 +35,17 @@ let interp = (exp : term) : term => {
       } else {
           throw "Stuck!"
       }
-      
+     
+  } else if (exp.type === "beq") {
+      let t1 = exp.t1;
+      let t2 = exp.t2;
+      if(t1.type !== "bool") {
+          throw "Stuck";
+      }
+      if(t2.type !== "bool") {
+          throw "Stuck";
+      }
+      return {type : "bool", bval : t1.bval == t2.bval};
   } else {
       throw "Stuck";
   }
