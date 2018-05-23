@@ -74,10 +74,10 @@ let has_type = (ctx : Context, tmm : pttm) : Option<ty> => {
         let x = tm.arg;
         let fT = has_type(ctx, f);
         let xT = has_type(ctx, x);
-        if((fT === undefined) || (xT === undefined) || (fT.type !== "pi" && fT.type !== "lambda")  || !obeq(fT.iT, xT)) {
+        if((fT === undefined) || (xT === undefined) || (fT.type !== "pi")  || !obeq(fT.iT, xT)) {
             return undefined;
         }
-        return subst(fT.body, fT.bind, xT);
+        return subst(fT.body, fT.bind, x);
     } else if (tm.type === "lambda") {
         let iTT = has_type(ctx, tm.iT);
         if(iTT === undefined || (iTT.type !== "U1" && iTT.type !== "U0")) {return undefined;}
