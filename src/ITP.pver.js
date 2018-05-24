@@ -1,4 +1,6 @@
+//@flow
 
+// proof constructor : Command -> pttm
 type Dict<K, V> = Array<[K, V]>;
 
 
@@ -17,9 +19,19 @@ type GlobalContext = Context;
 type Judgement = [Context, pttm];
 type Goal = [Context, pttm];
 type Goals = Array<Goal>
+type PartialGoals = Array<Goal | true>
 type NewContext = Context;
 type NewJudgement = [NewContext, pttm];
 type Commands = Array<Command>;
+type ArrayF<Domain, Codomain> = [number, Array<Domain> => Array<Codomain>];
+
+// homomorphism
+let connect = <D,C>(f : ArrayF<D,C>, g: ArrayF<D,C>) : ArrayF<D,C> => {
+    const f_ = (a : Array<D>) : Array<C> => f[1](a.slice(0, f[0]));
+    const g_ = (a : Array<D>) : Array<C> => g[1](a.slice(f[0], f[0] + g[0]));
+    return [f[0] + g[0], a => f_(a).concat(g_(a))];
+}
+
 
 
 type Command =
@@ -27,17 +39,34 @@ type Command =
     | {type : "apply", caller : NewJudgement, callee : NewJudgement}
     | {type : "check", term : pttm, ty : pttm}
     
-let goaltransform = (cmd : Command, goal : Goal) : Goals => {
-        
+let combine = (gs : Array<[PartialGoals, ArrayF<pttm, pttm>]>) : [PartialGoals, ArrayF<pttm, pttm>] => {
+    const goals = gs.reduce((x,y) => x[0].concat(y[0]));
+    const fs = gs.reduce(connect);
+    return [goals, fs];
 }
-let pfconstructor = (ncmd : (Goals) => Commands, warn: string => string, currentGoals : Goals) : pttm => {
+    
+let goaltransform = (cmd : Command, goal : Goal | true) : [PartialGoals, ArrayF<pttm, pttm>] => {
+    if(goal === true) {
+        return [[true], [1, x => x]];
+    }
+    
+
+}
+let pfconstructor = (ncmd : (PartialGoals) => Commands, warn: string => string, currentGoals : PartialGoals) : [pttm] => {
     let nextcmds_ = ncmd(currentGoals);
     while(nextcmds.length !== currentGoals.length) {
         warn("Error: Command number not enough");
         nextcmds_ = ncmd(currentGoals);
     }
     const nextcmds = nextcmds_;
-    
+    const newGoals_IT = combine(nextcmds.map((cmd, index) => goaltransform(cmd, currentGoals[index])));
+    const newGoals = newGoals_IT[0];
+    const inverseTransform = newGoals_IT[1];
+    if(newGoals.filter(x => x !== true).length === 0) {
+        return inverseTransform[1](newGoals.map(x => ((undefined : any): pttm)));
+    } else {
+        return inverseTransform[1](pfconstructor(ncmd, warn, newGoals));
+    }
 }
 
 
