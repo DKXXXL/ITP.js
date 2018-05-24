@@ -81,9 +81,10 @@ let has_type = (ctx : Context, tmm : pttm) : Option<ty> => {
     } else if (tm.type === "lambda") {
         let iTT = has_type(ctx, tm.iT);
         if(iTT === undefined || (iTT.type !== "U1" && iTT.type !== "U0")) {return undefined;}
-        let oT = has_type(_add_to_dict(tm.bind, untyped_beta_conversion(tm.iT), ctx), tm.body);
+        const iTc = untyped_beta_conversion(tm.iT);
+        let oT = has_type(_add_to_dict(tm.bind, iTc, ctx), tm.body);
         if(oT === undefined || (iTT.type !== "U1" && iTT.type !== "U0")) {return undefined};
-        return {type : "pi", bind : tm.bind, iT : tm.iT, body : oT};
+        return {type : "pi", bind : tm.bind, iT : iTc, body : oT};
     } else if(tm.type === "pi") {
         let iTT = has_type(ctx, tm.iT);
         if(iTT === undefined || (iTT.type !== "U1" && iTT.type !== "U0")) {return undefined;}
