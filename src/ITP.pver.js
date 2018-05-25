@@ -1,6 +1,7 @@
 //@flow
 
 // proof constructor : Command -> pttm
+// proof constructor only works at type-level
 type Dict<K, V> = Array<[K, V]>;
 
 
@@ -13,17 +14,18 @@ let _add_to_dict = <K, V>(newterm : K, newtype : V, ctx: Dict<K,V>) : Dict<K,V> 
 let _find_in_dict = <K,V>(pred: K => boolean, ctx : Dict<K,V>) : Option<V> => (x => {if(!x){return x[1];}else{return undefined;}})(ctx.filter(x => pred(x[0]))[0]);
 let _reverse_mapping = <K, V>(d : Dict<K,V>) : Dict<V,K> => d.map(x => [x[1], x[0]]);
 
-type ValOfCtx = [pttm, pttm];
+type ValOfCtx = pttm;
 type Context = Dict<number, ValOfCtx>;
-type GlobalContext = Context;
-type Judgement = [Context, pttm];
-type Goal = [Context, pttm];
+type DefContext = Dict<number, [pttm, pttm]>;
+//type GlobalContext = Context;
+type Judgement = [DefContext, Context, pttm];
+type Goal = [DefContext, Context, pttm];
 type Goals = Array<Goal>
 type PartialGoals = Array<Goal | true>
 type NewContext = Context;
 type NewJudgement = [NewContext, pttm];
 type Commands = Array<Command>;
-type ArrayF<Domain, Codomain> = [number, Array<Domain> => Array<Codomain>];
+type ArrayF<Domain, Codomain> = [number, Array<Domain> => Array<Codomain>]; // size of doman * function
 
 // homomorphism
 let connect = <D,C>(f : ArrayF<D,C>, g: ArrayF<D,C>) : ArrayF<D,C> => {
@@ -37,7 +39,9 @@ let connect = <D,C>(f : ArrayF<D,C>, g: ArrayF<D,C>) : ArrayF<D,C> => {
 type Command =
     {type : "intro", n : NewJudgement}
     | {type : "apply", caller : NewJudgement, callee : NewJudgement}
-    | {type : "check", term : pttm, ty : pttm}
+    | {type : "check", term : pttm}
+    | {type : "conv", newform : NewJudgement} // type level calculation
+    | {type : "let", n : number, term : pttm} // local definition
     
 let combine = (gs : Array<[PartialGoals, ArrayF<pttm, pttm>]>) : [PartialGoals, ArrayF<pttm, pttm>] => {
     const goals = gs.reduce((x,y) => x[0].concat(y[0]));
