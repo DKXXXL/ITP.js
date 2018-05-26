@@ -1,4 +1,7 @@
 //@flow
+
+// A prover : Extend Coc with definition, become lambdaD
+
 import type {pttm, Dict, Option} from "./ITP2" 
 import {
     untyped_beta_conversion,
@@ -46,6 +49,7 @@ type NewContext = Context;
 type NewJudgement = pttm;
 type Commands = Array<Command>;
 type ArrayF<Domain, Codomain> = [number, Array<Domain> => Array<Codomain>]; // size of doman * function
+export type DefinitionList = Dict<number, [pttm, pttm]>;
 
 // homomorphism
 const connect = <D,C>(f : ArrayF<D,C>, g: ArrayF<D,C>) : ArrayF<D,C> => {
@@ -93,6 +97,13 @@ const untyped_delta_conv_all = (ctx : Context, tm : pttm) : pttm => {
 }
 
 const untyped_beta_delta_conv_all = (ctx : Context, tm : pttm) : pttm => untyped_beta_conv(untyped_delta_conv_all(ctx, tm));
+
+// prerequisite : ctx is consistent
+const pfChecker = (ctx : DefinitionList, newbind: number, newterm : pttm) : boolean => {
+    if(_find_in_dict(x => x === newbind, ctx) !== undefined) {return false;}
+    if(has_type(ctx.map(x => [x[0], x[1][1]]), newterm) === undefined) {return false;}
+    return true;
+}
 
 const goaltransform = (warn : string => string, cmd_ : Command, goal_ : Goal | true) : [PartialGoals, ArrayF<pttm, pttm>] => {
     
