@@ -5,6 +5,7 @@
     "flow-bin": "^0.41.0"
   },
   "scripts": {
-    "flow": "flow"
+    "flow": "flow",
+    "build": "babel src -d lib"
   }
 }
