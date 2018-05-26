@@ -1,19 +1,35 @@
 //@flow
-import * from ITP2
+import type {pttm, Dict, Option} from "./ITP2" 
+import {
+    untyped_beta_conversion,
+    has_type,
+    TYPE_STAR,
+    TYPE_SQUARE,
+    obeq,
+    _add_to_dict,
+    _find_in_dict,
+    _reverse_mapping
+} from "./ITP2"
+//const ITP2 = require("./ITP2");
+//const has_type = ITP2.has_type;
+const untyped_beta_conv = untyped_beta_conversion;
+//const TYPE_STAR = ITP2.TYPE_STAR;
+//const TYPE_SQUARE = ITP2.TYPE_SQUARE;
+
 // proof constructor : Command -> pttm
 // proof constructor only works at type-level
-type Dict<K, V> = Array<[K, V]>;
-
-
-const obeq = (a: Object, b:Object):boolean => (typeof a === typeof b) && (JSON.stringify(a) === JSON.stringify(b));
+//type Dict<K, V> = Array<[K, V]>;
+//type Option<T> = T | typeof undefined;
+//
+//const obeq = (a: Object, b:Object):boolean => (typeof a === typeof b) && (JSON.stringify(a) === JSON.stringify(b));
 
 //let lift_maybe = <D,C>(f: D => C): ((D | undefined) => (C | undefined)) => 
 //            (input : D | undefined) => {if (D !== undefined) {return f(D);} else {return undefined;} }
 
-const _add_to_dict = <K, V>(newterm : K, newtype : V, ctx: Dict<K,V>) : Dict<K,V> => {let r = ctx.slice(); r.push([newterm, newtype]); return r;}
-const _find_in_dict = <K,V>(pred: K => boolean, ctx : Dict<K,V>) : Option<V> => 
-        (x_ => {const x = x_[x_.length - 1]; if(!x){return x[1];}else{return undefined;}})(ctx.filter(x => pred(x[0])));
-const _reverse_mapping = <K, V>(d : Dict<K,V>) : Dict<V,K> => d.map(x => [x[1], x[0]]);
+//const _add_to_dict = <K, V>(newterm : K, newtype : V, ctx: Dict<K,V>) : Dict<K,V> => {let r = ctx.slice(); r.push([newterm, newtype]); return r;}
+//const _find_in_dict = <K,V>(pred: K => boolean, ctx : Dict<K,V>) : Option<V> => 
+//        (x_ => {const x = x_[x_.length - 1]; if(!x){return x[1];}else{return undefined;}})(ctx.filter(x => pred(x[0])));
+//const _reverse_mapping = <K, V>(d : Dict<K,V>) : Dict<V,K> => d.map(x => [x[1], x[0]]);
 
 type ValOfCtx = [pttm | "bottom" | false, pttm]; // definee & its type, if its definee is bottom, its primitive definition; if it is false, then it is in context
 
@@ -45,12 +61,11 @@ type Command =
     | {type : "apply", caller : NewJudgement, callee : NewJudgement}
     | {type : "check", term : pttm}
     | {type : "conv", newform : NewJudgement} // type level calculation
-    | {type : "let", n : number, term : pttm} // local definition
+    | {type : "let", bind: number, term : pttm} // local definition
     
 const combine = (gs : Array<[PartialGoals, ArrayF<pttm, pttm>]>) : [PartialGoals, ArrayF<pttm, pttm>] => {
-    const goals = gs.reduce((x,y) => x[0].concat(y[0]));
-    const fs = gs.reduce(connect);
-    return [goals, fs];
+    return gs.reduce((x,y) => [x[0].concat(y[0]), connect(x[1], y[1])]);
+
 }
     
 const untyped_delta_conv_all = (ctx : Context, tm : pttm) : pttm => {
@@ -62,7 +77,9 @@ const untyped_delta_conv_all = (ctx : Context, tm : pttm) : pttm => {
     } else if(tm.type === "apply") {
         return {type : "apply", fun : utca(tm.fun), arg : utca(tm.arg)};
     } else if(tm.type === "var") {
-        const replacement0 : ValOfContext = (findinCtx(ctx, tm.n));
+        const replacement0_ : Option<ValOfCtx> = (findinCtx(ctx, tm.n));
+        if(replacement0_ === undefined) {return tm;}
+        const replacement0 : ValOfCtx = replacement0_;
         if(replacement0[0] === "bottom") {
             return tm;
         } else if(replacement0[0] === false) {
@@ -77,74 +94,81 @@ const untyped_delta_conv_all = (ctx : Context, tm : pttm) : pttm => {
 
 const untyped_beta_delta_conv_all = (ctx : Context, tm : pttm) : pttm => untyped_beta_conv(untyped_delta_conv_all(ctx, tm));
 
-const goaltransform = (warn : string => string; cmd : Command, goal_ : Goal | true) : [PartialGoals, ArrayF<pttm, pttm>] => {
-    const goal = goal_;
-    if(goal === true) {
-        return [[true], [1, x => x]];
+const goaltransform = (warn : string => string, cmd_ : Command, goal_ : Goal | true) : [PartialGoals, ArrayF<pttm, pttm>] => {
+    
+    const cmd = cmd_;
+    const donothing : ArrayF<pttm, pttm> = [1, x => x];
+    if(goal_ === true) {
+        return [[true], donothing];
     }
+    const goal : Goal = goal_;
     // Now goal is not true
-    let ctx = goal[0];
+    const ctx : Context = goal[0];
+    const ctx_list = ctx.map(x => [x[0], x[1][1]]);
     let goal_ty = goal[1];
     if(cmd.type === "intro") {
         // check truely a function
-        if(goal_ty.type !== "pi") {warn("Intro failed."); return [[goal], x => x];}
+        if(goal_ty.type !== "pi") {warn("Intro failed."); return [[goal], donothing];}
         return [[[addCtx(goal_ty.bind, [false, goal_ty.iT], ctx), goal_ty.body]],
-                x => [{type : "lambda", bind : goal_ty.bind, iT : goal_ty.iT, x[0]}] ];
+                [1, x => [{type : "lambda", bind : goal_ty.bind, iT : goal_ty.iT, body : x[0]}] ]];
     } else if (cmd.type === "apply") {
         const claimed_fty = cmd.caller;
         const claimed_xty = cmd.callee;
-        const ctx_list = ctx.map(x => [x[0], x[1][1]]);
+        
         const type_of_claimed_f = has_type(ctx_list, claimed_fty);
         const type_of_claimed_x = has_type(ctx_list, claimed_xty);
         if(type_of_claimed_f === undefined || !obeq(type_of_claimed_f, TYPE_STAR) 
-            || type_of_claimed_x === undefined || !obeq(type_of_claimed_f, TYPE_STAR)) {warn("Apply failed. Type Inconsistent."); return [[goal], x => x];}
-        if(claimed_fty.type !== "pi") {warn("Apply failed. Type Inconsistent."); return [[goal], x => x];}
-        if(!obeq(claimed_fty.iT, claimed_xty)) {warn("Apply failed. Type Inconsistent."); return [[goal], x => x];}
+            || type_of_claimed_x === undefined || !obeq(type_of_claimed_f, TYPE_STAR)) {warn("Apply failed. Type Inconsistent."); return [[goal], donothing];}
+        if(claimed_fty.type !== "pi") {warn("Apply failed. Type Inconsistent."); return [[goal], donothing];}
+        if(!obeq(claimed_fty.iT, claimed_xty)) {warn("Apply failed. Type Inconsistent."); return [[goal], donothing];}
         return [
                 [[ctx, claimed_fty],
-                 [ctx, claimed_xty]] : PartialGoals,
-                 x => [{type: "apply", fun : x[0], arg: x[1]}];
+                 [ctx, claimed_xty]] , //: PartialGoals,
+                 [2,x => [{type: "apply", fun : x[0], arg: x[1]}]]
                 ];
     } else if (cmd.type === "check") {
         const claimed_term = cmd.term;
-        const claimed_term_ty = has_type(ctx, claimed_term);
-        if(claimed_term_ty !== goal_ty) {warn("Check failed. Type Inconsistent."); return [[goal], x => x];}
+        const claimed_term_ty = has_type(ctx_list, claimed_term);
+        if(claimed_term_ty !== goal_ty) {warn("Check failed. Type Inconsistent."); return [[goal], donothing];}
     } else if (cmd.type === "conv") {
         const claimed_ty = cmd.newform;
         // now beta, delta conversion
-        const ty_claimed_ty = has_type(ctx, claimed_ty);
-        if(ty_claimed_ty === undefined) {warn("Conversion failed. Types are not equivalent."); return [[goal], x => x];}
-        if(!obeq(untyped_beta_delta_conv_all(ctx, claimed_ty), untyped_beta_delta_conv_all(ctx, goal_ty))) {warn("Conversion failed. Types are not equivalent."); return [[goal], x => x];}
-        return [[ctx, claimed_ty], x => x];
+        const ty_claimed_ty = has_type(ctx_list, claimed_ty);
+        if(ty_claimed_ty === undefined) {warn("Conversion failed. Types are not equivalent."); return [[goal], donothing];}
+        if(!obeq(untyped_beta_delta_conv_all(ctx, claimed_ty), untyped_beta_delta_conv_all(ctx, goal_ty))) {warn("Conversion failed. Types are not equivalent."); return [[goal], donothing];}
+        return [[[ctx, claimed_ty]], [1, x => x]];
         
     } else if (cmd.type === "let") {
         const new_add_term = cmd.term;
-        const new_add_term_ty = has_type(ctx, new_add_term);
-        if(new_add_term_ty === undefined)) {warn("Local Define failed. Unsupported type"); return [[goal], x => x];}
+        const new_add_term_ty = has_type(ctx_list, new_add_term);
+        if(new_add_term_ty === undefined) {warn("Local Define failed. Unsupported type"); return [[goal], donothing];}
          return [[[addCtx(cmd.bind, [new_add_term, new_add_term_ty], ctx), goal_ty]],
-                x => [  {type: "apply",
-                            fun : {type : "lambda", bind : cmd.bind, iT : new_add_term_ty, x[0]},
+                [1, x => [  {type: "apply",
+                            fun : {type : "lambda", bind : cmd.bind, iT : new_add_term_ty, body : x[0]},
                             arg : new_add_term
                         }
-                        ] ];
+                        ]] ];
     }
-    
-
+        // Should not be happening
+    warn("Unexpected internal error"); 
+    return [[goal], donothing];
 }
-const pfconstructor = (ncmd : (PartialGoals) => Commands, warn: string => string, currentGoals : PartialGoals) : [pttm] => {
+
+const pfconstructor = (ncmd : (PartialGoals) => Commands, warn: string => string, currentGoals : PartialGoals) : Array<pttm> => {
     let nextcmds_ = ncmd(currentGoals);
-    while(nextcmds.length !== currentGoals.length) {
+    while(nextcmds_.length !== currentGoals.length) {
         warn("Error: Command number not enough");
         nextcmds_ = ncmd(currentGoals);
     }
-    const nextcmds = nextcmds_;
-    const newGoals_IT = combine(nextcmds.map((cmd, index) => goaltransform(cmd, currentGoals[index])));
-    const newGoals = newGoals_IT[0];
-    const inverseTransform = newGoals_IT[1];
+    const nextcmds : Commands = nextcmds_;
+    const newGoals_IT : [PartialGoals, ArrayF<pttm, pttm>] = combine(nextcmds.map((cmd, index) => goaltransform(warn, cmd, currentGoals[index])));
+    const newGoals : PartialGoals = newGoals_IT[0];
+    if(newGoals_IT[1][0] !== newGoals.length) {warn("Internal Error: Domain number incoincides with array element number");}
+    const inverseTransform : Array<pttm> => Array<pttm> = newGoals_IT[1][1];
     if(newGoals.filter(x => x !== true).length === 0) {
-        return inverseTransform[1](newGoals.map(x => ((undefined : any): pttm)));
+        return inverseTransform(newGoals.map(x => ((undefined : any): pttm)));
     } else {
-        return inverseTransform[1](pfconstructor(ncmd, warn, newGoals));
+        return inverseTransform(pfconstructor(ncmd, warn, newGoals));
     }
 }
 

@@ -1,7 +1,7 @@
 //@flow
 
 
-type Dict<K, V> = Array<[K, V]>;
+export type Dict<K, V> = Array<[K, V]>;
 
 
 const obeq = (a: Object, b:Object):boolean => (typeof a === typeof b) && (JSON.stringify(a) === JSON.stringify(b));
@@ -17,7 +17,7 @@ const _reverse_mapping = <K, V>(d : Dict<K,V>) : Dict<V,K> => d.map(x => [x[1], 
 
 // Calculus of Construction
 // pttm = pre-typed term
-type pttm = 
+export type pttm = 
     {type : "U1"}               // Universe level 1
     | {type : "U0"}             // Universe level 0
     | {type : "apply", fun : pttm, arg : pttm}
@@ -30,7 +30,7 @@ const TYPE_SQUARE : pttm = {type : "U1"};
     
 type ty = pttm;
 type Context = Dict<number, ty>;
-type Option<T> = T | typeof undefined;
+export type Option<T> = T | typeof undefined;
 
 
 const subst = (exp : pttm, from : number, to : pttm) : pttm => {
@@ -98,3 +98,14 @@ const has_type = (ctx : Context, tmm : pttm) : Option<ty> => {
         return _find_in_dict(x => x === tm.n, ctx);
     }
 }
+
+module.exports = {
+    untyped_beta_conversion,
+    has_type,
+    TYPE_STAR,
+    TYPE_SQUARE,
+    obeq,
+    _add_to_dict,
+    _find_in_dict,
+    _reverse_mapping
+};
