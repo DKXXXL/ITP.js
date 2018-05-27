@@ -21,10 +21,9 @@ type Tactic =
 
 const emptyGen= <X>(s:()):Option<X> => undefined;
 
-const concat = <X>(f : Generator<X>, g : Generator<X>):Generator<X> => 
-                        {
+const concat = <X>(f : Generator<X>, g : Generator<X>):Generator<X> => {
                             let flag = true;
-                            return x => {
+                            return () => {
                                 if(flag){
                                     const r = f();
                                     if(r !== undefined) {
@@ -34,11 +33,11 @@ const concat = <X>(f : Generator<X>, g : Generator<X>):Generator<X> =>
                                     }
                                 }
                                 return g(); 
-                            };
+                                };
                         };
 const joinGen = <X>(f : Generator<Generator<X>>) : Generator<X> => {
     let current = f();
-    return s => {
+    return () => {
         if(current === undefined) {
             return undefined;
         }
@@ -54,7 +53,7 @@ const joinGen = <X>(f : Generator<Generator<X>>) : Generator<X> => {
     };
 };
 
-const mapGen = <X, Y>(fmap : X => Y, gen : Generator<X>) : Generator<Y> => (x => fmap(gen()));
+const mapGen = <X, Y>(fmap : X => Y, gen : Generator<X>) : Generator<Y> => (() => fmap(gen()));
 
 const tacticIntp = (tctx : TContext, tac : Tactic) : Generator<Actic> => {
     if(tac.type === "seq"){
@@ -69,6 +68,50 @@ type Output = string => string;
 type Error = string => typeof undefined;
 
 const inputAsGen = (i : Input) : Generator<Tactic> => (x => i(""));
+
+const prettyprint = (pg : PartialGoals) : string => 
+
+const interaction = (ioe : stdIO, tctx : TContext) : PartialGoals => Commands => {
+    const tacticInput : Generator<Actic> = joinGen(mapGen(y => tacticIntp(tctx, y), inputAsGen(ioe.i)));
+    return s => {
+        ioe.o(s);
+        return tacticInput();
+    }
+}
+const PFCONSOLE = (ioe : stdIO, tctx : TContext, dctx : DefinitionList, newty : pttm) : pttm => 
+    pfconstructor(interaction(ioe, tctx), ioe.e, [[dctx, newty]]);
+
+
+
+type INSTRUCTION = 
+    {type : "addDef", name : number, ty : pttm}
+    | {type : "addTactic", name : number, tac : Tactic}
+    | {type : "printScript", outMethod : string => typeof undefined}
+    | {type : "printDef", outMethod : DefinitionList => typeof undefined}
+    | {type : "printTacs"}
+    | {type : "terminate"}
+
+const CONSOLE = (ioe : stdIO) : typeof undefined => {
+    let AllDefinitions : DefinitionList = [];
+    let AllTactics : TContext = [];
+    let ProofScript : string = "";
+    while(true){
+        const input : INSTRUCTION = ioe.iI("");
+        if(input.type === "terminate"){
+            break;
+        } else if(input.type === "addDef") {
+            // Into Proof Mode
+            const tm = PFCONSOLE(ioe, AllTactics, AllDefinitions, input.ty);
+            AllDefinitions.push([input.name, tm]);
+        } else if(input.type === "addTactics") {
+            
+        }
+    }
+
+    return undefined;
+}
+
+
 
 //
 // class StateTransition<S, R>{
@@ -112,40 +155,3 @@ const inputAsGen = (i : Input) : Generator<Tactic> => (x => i(""));
 //     }
 // )
 // }
-
-
-
-const prettyprint = (pg : PartialGoals) : string => 
-
-const interaction = (ioe : stdIO, tctx : TContext) : PartialGoals => Commands => {
-    const tacticInput : Generator<Actic> = joinGen(mapGen(y => tacticIntp(tctx, y), inputAsGen(ioe.i)));
-    return s => {
-        ioe.o(s);
-        return tacticInput();
-    }
-}
-const PFCONSOLE = (ioe : stdIO, tctx : TContext, dctx : DefinitionList, newty : pttm) : pttm => 
-    pfconstructor(interaction(ioe, tctx), ioe.e, [[dctx, newty]]);
-
-
-
-type INSTRUCTION = 
-    {type : "addDef", name : number, ty : pttm}
-    | {type : "addTactic", name : number, tac : Tactic}
-    | {type : "printScript", outMethod : string => typeof undefined}
-    | {type : "printDef", outMethod : string => typeof undefined}
-    | {type : "printTacs"}
-    | {type : "terminate"}
-
-const CONSOLE = (ioe : stdIO) : typeof undefined => {
-    let AllDefinitions : DefinitionList = [];
-    let AllTactics : TContext = [];
-    while(true){
-        const input : INSTRUCTION = ioe.iI();
-        if(input.type === "terminate"){
-            break;
-        } else if(input.type === "")
-    }
-
-
-}

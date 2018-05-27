@@ -67,6 +67,7 @@ export type Command =
     | {type : "check", term : pttm}
     | {type : "conv", newform : NewJudgement} // type level calculation
     | {type : "let", bind: number, term : pttm} // local definition
+    | {type : "focus"}
     
 const combine = (gs : Array<[PartialGoals, ArrayF<pttm, pttm>]>) : [PartialGoals, ArrayF<pttm, pttm>] => {
     return gs.reduce((x,y) => [x[0].concat(y[0]), connect(x[1], y[1])]);
@@ -114,7 +115,7 @@ const pfChecker = (ctx : DefinitionList) : boolean => {
             newtermChecker(oldlist, ctx[ctx.length-1][0], ctx[ctx.length-1][1][0], ctx[ctx.length-1][1][1]);
 }
 
-const goaltransform = (warn: string => typeof undefined, cmd_ : Command, goal_ : Goal | true) : [PartialGoals, ArrayF<pttm, pttm>] => {
+const goaltransform = (ncmd : (PartialGoals) => Commands,warn: string => typeof undefined, cmd_ : Command, goal_ : Goal | true) : [PartialGoals, ArrayF<pttm, pttm>] => {
     
     const cmd = cmd_;
     const donothing : ArrayF<pttm, pttm> = [1, x => x];
@@ -150,6 +151,7 @@ const goaltransform = (warn: string => typeof undefined, cmd_ : Command, goal_ :
         const claimed_term = cmd.term;
         const claimed_term_ty = has_type(ctx_list, claimed_term);
         if(claimed_term_ty !== goal_ty) {warn("Check failed. Type Inconsistent."); return [[goal], donothing];}
+        return [[true], [1, x => [claimed_term]]];
     } else if (cmd.type === "conv") {
         const claimed_ty = cmd.newform;
         // now beta, delta conversion
@@ -168,10 +170,11 @@ const goaltransform = (warn: string => typeof undefined, cmd_ : Command, goal_ :
                             arg : new_add_term
                         }
                         ]] ];
+    } else if(cmd.type === "focus") {
+        const term = pfconstructor(ncmd, warn, [goal])[0];
+        return [[true], [1, x => [term]]];
     }
-        // Should not be happening
-    warn("Unexpected internal error"); 
-    return [[goal], donothing];
+
 }
 
 const pfconstructor = (ncmd : (PartialGoals) => Commands, warn: string => typeof undefined, currentGoals : PartialGoals) : Array<pttm> => {
@@ -181,7 +184,7 @@ const pfconstructor = (ncmd : (PartialGoals) => Commands, warn: string => typeof
         nextcmds_ = ncmd(currentGoals);
     }
     const nextcmds : Commands = nextcmds_;
-    const newGoals_IT : [PartialGoals, ArrayF<pttm, pttm>] = combine(nextcmds.map((cmd, index) => goaltransform(warn, cmd, currentGoals[index])));
+    const newGoals_IT : [PartialGoals, ArrayF<pttm, pttm>] = combine(nextcmds.map((cmd, index) => goaltransform(ncmd, warn, cmd, currentGoals[index])));
     const newGoals : PartialGoals = newGoals_IT[0];
     if(newGoals_IT[1][0] !== newGoals.length) {warn("Internal Error: Domain number incoincides with array element number");}
     const inverseTransform : Array<pttm> => Array<pttm> = newGoals_IT[1][1];
