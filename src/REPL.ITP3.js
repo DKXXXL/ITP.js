@@ -17,11 +17,13 @@ type Tactic =
     | {type : "seq", t0 : Tactic, t1 : Tactic}
     | {type : "let", name : number, bind : Tactic, body : Tactic}
     | {type : "abs", name : number, body : Tactic}
-    | {type : "call", }
+    | {type : "call"}
+
+const emptyGen= <X>(s:()):Option<X> => undefined;
 
 const concat = <X>(f : Generator<X>, g : Generator<X>):Generator<X> => 
                         {
-                            let flag:boolean = true;
+                            let flag = true;
                             return x => {
                                 if(flag){
                                     const r = f();
@@ -33,19 +35,40 @@ const concat = <X>(f : Generator<X>, g : Generator<X>):Generator<X> =>
                                 }
                                 return g(); 
                             };
-                        }
-const joinGen = <X>(f : Generator<Generator<X>>) : Generator<X> 
+                        };
+const joinGen = <X>(f : Generator<Generator<X>>) : Generator<X> => {
+    let current = f();
+    return s => {
+        if(current === undefined) {
+            return undefined;
+        }
+        const r = current();
+        if(r === undefined) {
+            current = f();
+            if(current === undefined) {
+            return undefined;
+            }
+        } else {
+            return r;
+        }
+    };
+};
+
+const mapGen = <X, Y>(fmap : X => Y, gen : Generator<X>) : Generator<Y> => (x => fmap(gen()));
+
 const tacticIntp = (tctx : TContext, tac : Tactic) : Generator<Actic> => {
     if(tac.type === "seq"){
         return concat()
     }
-}
+};
 
 type stdIO = {i : Input, o : Output, e : Error};
 
 type Input = string => Tactic;
 type Output = string => string;
 type Error = string => typeof undefined;
+
+const inputAsGen = (i : Input) : Generator<Tactic> => (x => i(""));
 
 // class StateTransition<S, R>{
 //     constructor(t : S => [S, R]) {
@@ -89,5 +112,16 @@ type Error = string => typeof undefined;
 // )
 // }
 
+
+
 const prettyprint = (pg : PartialGoals) : string => 
-const PFCONSOLE = (ioe : stdIO, tctx : TContext, name: number, newterm : pttm) =>  
+
+const interaction = (ioe : stdIO, tctx : TContext) : PartialGoals => Commands => {
+    const tacticInput : Generator<Actic> = joinGen(mapGen(y => tacticIntp(tctx, y), inputAsGen(ioe.i)));
+    return s => {
+        ioe.o(s);
+        return tacticInput();
+    }
+}
+const PFCONSOLE = (ioe : stdIO, tctx : TContext, dctx : DefinitionList, newty : pttm) : pttm => 
+    pfconstructor(interaction(ioe, tctx), ioe.e, [[dctx, newty]]);
