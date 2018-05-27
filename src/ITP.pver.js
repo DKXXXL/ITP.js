@@ -1,6 +1,7 @@
 //@flow
 
 // A prover : Extend Coc with definition, become lambdaD
+// should named as ITP3.js
 
 import type {pttm, Dict, Option} from "./ITP2" 
 import {
@@ -34,20 +35,20 @@ const untyped_beta_conv = untyped_beta_conversion;
 //        (x_ => {const x = x_[x_.length - 1]; if(!x){return x[1];}else{return undefined;}})(ctx.filter(x => pred(x[0])));
 //const _reverse_mapping = <K, V>(d : Dict<K,V>) : Dict<V,K> => d.map(x => [x[1], x[0]]);
 
-type ValOfCtx = [pttm | "bottom" | false, pttm]; // definee & its type, if its definee is bottom, its primitive definition; if it is false, then it is in context
+export type ValOfCtx = [pttm | "bottom" | false, pttm]; // definee & its type, if its definee is bottom, its primitive definition; if it is false, then it is in context
 
-type Context = Dict<number, ValOfCtx>;
+export type Context = Dict<number, ValOfCtx>;
 const addCtx = _add_to_dict;
 const findinCtx = (ctx: Context, n:number) => _find_in_dict(j => n === j, ctx);
 //type DefContext = Dict<number, [pttm, pttm]>;
 //type GlobalContext = Context;
 type Judgement = [Context, pttm];
-type Goal = [Context, pttm];
-type Goals = Array<Goal>
-type PartialGoals = Array<Goal | true>
+export type Goal = [Context, pttm];
+export type Goals = Array<Goal>
+export type PartialGoals = Array<Goal | true>
 type NewContext = Context;
-type NewJudgement = pttm;
-type Commands = Array<Command>;
+export type NewJudgement = pttm;
+export type Commands = Array<Command>;
 type ArrayF<Domain, Codomain> = [number, Array<Domain> => Array<Codomain>]; // size of doman * function
 export type DefinitionList = Dict<number, [pttm, pttm]>;
 
@@ -60,7 +61,7 @@ const connect = <D,C>(f : ArrayF<D,C>, g: ArrayF<D,C>) : ArrayF<D,C> => {
 
 
 
-type Command =
+export type Command =
     {type : "intro"}
     | {type : "apply", caller : NewJudgement, callee : NewJudgement}
     | {type : "check", term : pttm}
@@ -99,13 +100,18 @@ const untyped_delta_conv_all = (ctx : Context, tm : pttm) : pttm => {
 const untyped_beta_delta_conv_all = (ctx : Context, tm : pttm) : pttm => untyped_beta_conv(untyped_delta_conv_all(ctx, tm));
 
 // prerequisite : ctx is consistent
-const pfChecker = (ctx : DefinitionList, newbind: number, newterm : pttm) : boolean => {
+const newtermChecker = (ctx : DefinitionList, newbind: number, newterm : pttm) : boolean => {
     if(_find_in_dict(x => x === newbind, ctx) !== undefined) {return false;}
     if(has_type(ctx.map(x => [x[0], x[1][1]]), newterm) === undefined) {return false;}
     return true;
 }
 
-const goaltransform = (warn : string => string, cmd_ : Command, goal_ : Goal | true) : [PartialGoals, ArrayF<pttm, pttm>] => {
+const pfChecker = (ctx : DefinitionList) : boolean => {
+    const oldlist = ctx.slice(0, ctx.length - 1);
+    return newpfChecker(oldlist) && newtermChecker(oldlist, ctx[ctx.length-1][0], ctx[ctx.length-1][1]);
+}
+
+const goaltransform = (warn: string => typeof undefined, cmd_ : Command, goal_ : Goal | true) : [PartialGoals, ArrayF<pttm, pttm>] => {
     
     const cmd = cmd_;
     const donothing : ArrayF<pttm, pttm> = [1, x => x];
@@ -165,7 +171,7 @@ const goaltransform = (warn : string => string, cmd_ : Command, goal_ : Goal | t
     return [[goal], donothing];
 }
 
-const pfconstructor = (ncmd : (PartialGoals) => Commands, warn: string => string, currentGoals : PartialGoals) : Array<pttm> => {
+const pfconstructor = (ncmd : (PartialGoals) => Commands, warn: string => typeof undefined, currentGoals : PartialGoals) : Array<pttm> => {
     let nextcmds_ = ncmd(currentGoals);
     while(nextcmds_.length !== currentGoals.length) {
         warn("Error: Command number not enough");
@@ -183,4 +189,8 @@ const pfconstructor = (ncmd : (PartialGoals) => Commands, warn: string => string
     }
 }
 
-
+module.exports = {
+    pfconstructor,
+    newtermChecker,
+    pfChecker
+}
