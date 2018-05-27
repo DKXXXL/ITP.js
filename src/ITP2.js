@@ -4,7 +4,7 @@
 export type Dict<K, V> = Array<[K, V]>;
 
 
-const obeq = (a: Object, b:Object):boolean => (typeof a === typeof b) && (JSON.stringify(a) === JSON.stringify(b));
+const obeq = (a: ?Object, b:?Object):boolean => (typeof a === typeof b) && (JSON.stringify(a) === JSON.stringify(b));
 
 //let lift_maybe = <D,C>(f: D => C): ((D | undefined) => (C | undefined)) => 
 //            (input : D | undefined) => {if (D !== undefined) {return f(D);} else {return undefined;} }

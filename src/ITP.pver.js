@@ -99,16 +99,19 @@ const untyped_delta_conv_all = (ctx : Context, tm : pttm) : pttm => {
 
 const untyped_beta_delta_conv_all = (ctx : Context, tm : pttm) : pttm => untyped_beta_conv(untyped_delta_conv_all(ctx, tm));
 
+
+
 // prerequisite : ctx is consistent
-const newtermChecker = (ctx : DefinitionList, newbind: number, newterm : pttm) : boolean => {
+const newtermChecker = (ctx : DefinitionList, newbind: number, newterm : pttm, decType : pttm) : boolean => {
     if(_find_in_dict(x => x === newbind, ctx) !== undefined) {return false;}
-    if(has_type(ctx.map(x => [x[0], x[1][1]]), newterm) === undefined) {return false;}
+    if(!obeq(has_type(ctx.map(x => [x[0], x[1][1]]), newterm),decType)) {return false;}
     return true;
 }
 
 const pfChecker = (ctx : DefinitionList) : boolean => {
     const oldlist = ctx.slice(0, ctx.length - 1);
-    return newpfChecker(oldlist) && newtermChecker(oldlist, ctx[ctx.length-1][0], ctx[ctx.length-1][1]);
+    return pfChecker(oldlist) && 
+            newtermChecker(oldlist, ctx[ctx.length-1][0], ctx[ctx.length-1][1][0], ctx[ctx.length-1][1][1]);
 }
 
 const goaltransform = (warn: string => typeof undefined, cmd_ : Command, goal_ : Goal | true) : [PartialGoals, ArrayF<pttm, pttm>] => {
