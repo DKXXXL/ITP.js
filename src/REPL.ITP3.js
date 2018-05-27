@@ -6,7 +6,7 @@ import type {pttm, Dict, Option} from "./ITP2"
 import type {DefinitionList, Commands, Command, NewJudgement, Goal, Goals, PartialGoals, Context} from "./ITP.pver"
 import {pfconstructor,newtermChecker,pfChecker} from "./ITP.pver"
 
-let AllDefinitions : DefinitionList = [];
+
 
 type Actic = PartialGoals => Commands;
 type Generator<X> = () => Option<X> ;
@@ -62,14 +62,15 @@ const tacticIntp = (tctx : TContext, tac : Tactic) : Generator<Actic> => {
     }
 };
 
-type stdIO = {i : Input, o : Output, e : Error};
+type stdIO = {i : Input<Tactic>, iI : Input<INSTRUCTION>, o : Output, e : Error};
 
-type Input = string => Tactic;
+type Input<K> = string => <K>;
 type Output = string => string;
 type Error = string => typeof undefined;
 
 const inputAsGen = (i : Input) : Generator<Tactic> => (x => i(""));
 
+//
 // class StateTransition<S, R>{
 //     constructor(t : S => [S, R]) {
 //         this.transition = t;
@@ -125,3 +126,26 @@ const interaction = (ioe : stdIO, tctx : TContext) : PartialGoals => Commands =>
 }
 const PFCONSOLE = (ioe : stdIO, tctx : TContext, dctx : DefinitionList, newty : pttm) : pttm => 
     pfconstructor(interaction(ioe, tctx), ioe.e, [[dctx, newty]]);
+
+
+
+type INSTRUCTION = 
+    {type : "addDef", name : number, ty : pttm}
+    | {type : "addTactic", name : number, tac : Tactic}
+    | {type : "printScript", outMethod : string => typeof undefined}
+    | {type : "printDef", outMethod : string => typeof undefined}
+    | {type : "printTacs"}
+    | {type : "terminate"}
+
+const CONSOLE = (ioe : stdIO) : typeof undefined => {
+    let AllDefinitions : DefinitionList = [];
+    let AllTactics : TContext = [];
+    while(true){
+        const input : INSTRUCTION = ioe.iI();
+        if(input.type === "terminate"){
+            break;
+        } else if(input.type === "")
+    }
+
+
+}
