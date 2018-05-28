@@ -4,6 +4,8 @@
 // should named as ITP3.js
 
 import type {pttm, Dict, Option} from "./ITP2" 
+import {ideq} from './globalDef'
+import type {ID} from "./globalDef"
 import {
     untyped_beta_conversion,
     has_type,
@@ -12,7 +14,9 @@ import {
     obeq,
     _add_to_dict,
     _find_in_dict,
-    _reverse_mapping
+    _reverse_mapping,
+    pprintDict,
+    ppPttm
 } from "./ITP2"
 //const ITP2 = require("./ITP2");
 //const has_type = ITP2.has_type;
@@ -37,10 +41,17 @@ const untyped_beta_conv = untyped_beta_conversion;
 
 export type ValOfCtx = [pttm | "bottom" | false, pttm]; // definee & its type, if its definee is bottom, its primitive definition; if it is false, then it is in context
 
-export type Context = Dict<number, ValOfCtx>;
+export type Context = Dict<ID, ValOfCtx>;
 const addCtx = _add_to_dict;
-const findinCtx = (ctx: Context, n:number) => _find_in_dict(j => n === j, ctx);
-//type DefContext = Dict<number, [pttm, pttm]>;
+const findinCtx = (ctx: Context, n:ID) => _find_in_dict(j => ideq(n, j), ctx);
+const ppCtx = pprintDict(ppID, x => {
+        let ret = "";
+        if(typeof x[0] === 'pttm'){
+            ret = ret + " := " ppPttm(x[0]);
+        }
+        return ret + " : " + ppPttm(x[1]);
+        });
+//type DefContext = Dict<ID, [pttm, pttm]>;
 //type GlobalContext = Context;
 type Judgement = [Context, pttm];
 export type Goal = [Context, pttm];
@@ -50,7 +61,7 @@ type NewContext = Context;
 export type NewJudgement = pttm;
 export type Commands = Array<Command>;
 type ArrayF<Domain, Codomain> = [number, Array<Domain> => Array<Codomain>]; // size of doman * function
-export type DefinitionList = Dict<number, [pttm, pttm]>;
+export type DefinitionList = Dict<ID, [pttm, pttm]>;
 
 // homomorphism
 const connect = <D,C>(f : ArrayF<D,C>, g: ArrayF<D,C>) : ArrayF<D,C> => {
@@ -59,21 +70,23 @@ const connect = <D,C>(f : ArrayF<D,C>, g: ArrayF<D,C>) : ArrayF<D,C> => {
     return [f[0] + g[0], a => f_(a).concat(g_(a))];
 }
 
-
+// Now it's all about proof constructor
+// Proof constructor is a transformation from an array of commands to term in Coc
 
 export type Command =
     {type : "intro"}
     | {type : "apply", caller : NewJudgement, callee : NewJudgement}
     | {type : "check", term : pttm}
     | {type : "conv", newform : NewJudgement} // type level calculation
-    | {type : "let", bind: number, term : pttm} // local definition
+    | {type : "let", bind: ID, term : pttm} // local definition
     | {type : "focus"}
     
+const ppCmd = (x : Command) : string => JSON.stringify(x)
+
 const combine = (gs : Array<[PartialGoals, ArrayF<pttm, pttm>]>) : [PartialGoals, ArrayF<pttm, pttm>] => {
     return gs.reduce((x,y) => [x[0].concat(y[0]), connect(x[1], y[1])]);
-
 }
-    
+// At ITP2, it's pure Coc, so we have to reduce lambdaD into lambdaC
 const untyped_delta_conv_all = (ctx : Context, tm : pttm) : pttm => {
     const utca = x => untyped_delta_conv_all(ctx, x);
     if(tm.type === "lambda") {
@@ -103,18 +116,22 @@ const untyped_beta_delta_conv_all = (ctx : Context, tm : pttm) : pttm => untyped
 
 
 // prerequisite : ctx is consistent
-const newtermChecker = (ctx : DefinitionList, newbind: number, newterm : pttm, decType : pttm) : boolean => {
+const newtermChecker = (ctx : DefinitionList, newbind: ID, newterm : pttm, decType : pttm) : boolean => {
     if(_find_in_dict(x => x === newbind, ctx) !== undefined) {return false;}
     if(!obeq(has_type(ctx.map(x => [x[0], x[1][1]]), newterm),decType)) {return false;}
     return true;
 }
 
+// Check the whole proof is correct
 const pfChecker = (ctx : DefinitionList) : boolean => {
     const oldlist = ctx.slice(0, ctx.length - 1);
     return pfChecker(oldlist) && 
             newtermChecker(oldlist, ctx[ctx.length-1][0], ctx[ctx.length-1][1][0], ctx[ctx.length-1][1][1]);
 }
 
+// for a specific partial goal, it may transform into several subgoals, then we have to flatmap them
+// each array of commands is like a matrix transformation, than transform an array of partial goal into a new array of partial goal
+// the reason why it is partial goal is because the goal may have been accomplished
 const goaltransform = (ncmd : (PartialGoals) => Commands,warn: string => typeof undefined, cmd_ : Command, goal_ : Goal | true) : [PartialGoals, ArrayF<pttm, pttm>] => {
     
     const cmd = cmd_;
@@ -171,12 +188,19 @@ const goaltransform = (ncmd : (PartialGoals) => Commands,warn: string => typeof 
                         }
                         ]] ];
     } else if(cmd.type === "focus") {
+        // most special, it will hang up the current goal and star focusing on a particular partial goal
         const term = pfconstructor(ncmd, warn, [goal])[0];
         return [[true], [1, x => [term]]];
+    } else {
+        warn("Something Unexpected Happened.");
+        return [[goal], donothing];
     }
 
 }
 
+// Core of this file, transform an array of partial goal into an array of term each with correct type
+// term finder in some sense
+// the core of lambdaD, though no correctness is assure and necessary -- all the correctness is based on ITP2 (Coc)
 const pfconstructor = (ncmd : (PartialGoals) => Commands, warn: string => typeof undefined, currentGoals : PartialGoals) : Array<pttm> => {
     let nextcmds_ = ncmd(currentGoals);
     while(nextcmds_.length !== currentGoals.length) {
@@ -198,5 +222,7 @@ const pfconstructor = (ncmd : (PartialGoals) => Commands, warn: string => typeof
 module.exports = {
     pfconstructor,
     newtermChecker,
-    pfChecker
+    pfChecker,
+    ppCmd,
+    ppCtx
 }

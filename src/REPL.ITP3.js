@@ -2,15 +2,18 @@
 
 // An REPL for ITP3, a general interpretation for all platform
 
+import type {ID} from "./globalDef"
+import {ppID} from "./globalDef"
 import type {pttm, Dict, Option} from "./ITP2" 
+import {pprintDict} from "./ITP2"
 import type {DefinitionList, Commands, Command, NewJudgement, Goal, Goals, PartialGoals, Context} from "./ITP.pver"
-import {pfconstructor,newtermChecker,pfChecker} from "./ITP.pver"
+import {pfconstructor,newtermChecker,pfChecker, ppCmd} from "./ITP.pver"
 
 
 
 type Actic = PartialGoals => Commands;
 type Generator<X> = () => Option<X> ;
-type TContext = Dict<number, Tactic>;
+type TContext = Dict<ID, Tactic>;
 
 // MEDIUM LEVEL : META TACTIC
 // A Tactic is a instruction that can be interpreted into (A function from PartialGoals to Commands := Actic)
@@ -18,14 +21,45 @@ type TContext = Dict<number, Tactic>;
 type Tactic = 
     {type : "cmds", t : Commands}
     | {type : "seq", t0 : Tactic, t1 : Tactic}
-    | {type : "let", name : number, bind : Tactic, body : Tactic}
-    | {type : "abs", name : number, body : Tactic}
-    | {type : "call"}
+    | {type : "let", name : ID, bind : Tactic, body : Tactic}
+    | {type : "abs", name : ID, body : Tactic}
+    | {type : "call", f : Tactic}
+    | {type : "metavar", n : ID}
 
 // TContext -> String
-const prettyprintTac = (tctx : TContext) : string => {
-
+const pprintTac = (x : Tactic) : string => {
+    if(x.type === "cmds") {
+        return ppCmd(x.t);
+    } else if(x.type === "seq") {
+        return pprintTac(x.t0) + ";" + pprintTac(x.t1);
+    } else if(x.type === "let") {
+        return "let " + ppID(x.name) + " = " + pprintTac(x.bind) + " in " + pprintTac(x.body);
+    } else if(x.type === "abs") {
+        return "\\" + ppID(x.name) + " -> " + pprintTac(x.body);
+    } else if(x.type === "call") {
+        return pprintTac(x.f);
+    } else if (x.type === "tac") {
+        return ppID(x.n);
+    })
+    return "";
 }
+
+// The interpreter of Tactic
+const tacticIntp = (tctx : TContext, tac : Tactic) : Generator<Actic> => {
+    if(tac.type === "cmds"){
+        return listGen([s => tac.t]);
+    } else if(tac.type === "seq") {
+        const tip = t => tacticIntp(tctx, t);
+        return concat(tip(tac.t0), tip(tac.t1));
+    } else if(tac.type === "let") {
+        return tacticIntp(_add_in_dict(tac.name, tac.bind, tctx), tac.body);
+    } else if(tac.type === "abs") {
+        
+    } else if(tac.type === "call") {
+
+    }
+};
+const prettyprintTacCtx = pprintDict((x:ID) => x.toString(), pprintTac);
 
 // Array -> Generator
 const listGen= <X>(l : Array<X>) : Generator<X> => {
@@ -70,18 +104,7 @@ const joinGen = <X>(f : Generator<Generator<X>>) : Generator<X> => {
 
 const mapGen = <X, Y>(fmap : X => Y, gen : Generator<X>) : Generator<Y> => (() => fmap(gen()));
 
-// The interpreter of Tactic
-const tacticIntp = (tctx : TContext, tac : Tactic) : Generator<Actic> => {
-    if(tac.type === "cmds"){
-        return listGen([s => tac.t]);
-    } else if(tac.type === "seq") {
-        const tip = t => tacticIntp(tctx, t);
-        return concat(tip(tac.t0), tip(tac.t1));
-    } else if(tac.type === "let") {
-        
-        return tacticIntp(_add_in_dict(tac.name, tac.bind, tctx), )
-    }
-};
+
 
 type stdIO = {i : Input<Tactic>, iI : Input<INSTRUCTION>, o : Output, e : Error};
 
@@ -91,25 +114,33 @@ type Error = string => typeof undefined;
 
 const inputAsGen = (i : Input) : Generator<Tactic> => (x => i(""));
 
-const prettyprint = (pg : PartialGoals) : string => 
+const ppPGs = (pg : PartialGoals) : string => 
+    pg.map((x,index) => {if(x != true){return index.toString() + "] " + ppCtx(x[0]) + " |- " ppPttm(x[1]);} return ""})
+        .filter(x => x !== "")
+        .join("\n");
 
 
 
+// the flatmap (joinGen) makes input into a generator of actic
+// because each tactic can deal with several times of interaction (a number of Commands)
+// we need to flatmap, and what's more, the envoke of input becomes implicit
 const interaction = (ioe : stdIO, tctx : TContext) : PartialGoals => Commands => {
     const tacticInput : Generator<Actic> = joinGen(mapGen(y => tacticIntp(tctx, y), inputAsGen(ioe.i)));
     return s => {
-        ioe.o(s);
+        ioe.o(ppPgs(s));
         return tacticInput();
     }
 }
 const PFCONSOLE = (ioe : stdIO, tctx : TContext, dctx : DefinitionList, newty : pttm) : pttm => 
     pfconstructor(interaction(ioe, tctx), ioe.e, [[dctx, newty]]);
 
+
 // UPPER LEVEL : CONSOLE
+// by addDef, we can enter proof mode(pf constructor)
 
 type INSTRUCTION = 
-    {type : "addDef", name : number, ty : pttm}
-    | {type : "addTactic", name : number, tac : Tactic}
+    {type : "addDef", name : ID, ty : pttm}
+    | {type : "addTactic", name : ID, tac : Tactic}
     | {type : "printScript", outMethod : string => typeof undefined}
     | {type : "printDef", outMethod : DefinitionList => typeof undefined}
     | {type : "printTacs"}

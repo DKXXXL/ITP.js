@@ -1,5 +1,6 @@
 //@flow
-
+import type {ID} from './globalDef'
+import {ideq} from './globalDef'
 
 export type Dict<K, V> = Array<[K, V]>;
 
@@ -13,7 +14,8 @@ const _add_to_dict = <K, V>(newterm : K, newtype : V, ctx: Dict<K,V>) : Dict<K,V
 const _find_in_dict = <K,V>(pred: K => boolean, ctx : Dict<K,V>) : Option<V> => (x => {if(!x){return x[1];}else{return undefined;}})(ctx.filter(x => pred(x[0]))[0]);
 const _reverse_mapping = <K, V>(d : Dict<K,V>) : Dict<V,K> => d.map(x => [x[1], x[0]]);
 
-
+const pprintDict = <K,V>(pk : K => string, pv : V => string) :( Dict<K,V> => string) => 
+    d => d.map((kv) => pk(kv[0]) + " : " + pv(kv[1])).join(",")
 
 // Calculus of Construction
 // pttm = pre-typed term
@@ -21,19 +23,21 @@ export type pttm =
     {type : "U1"}               // Universe level 1
     | {type : "U0"}             // Universe level 0
     | {type : "apply", fun : pttm, arg : pttm}
-    | {type : "lambda", bind : number, iT : pttm, body : pttm}
-    | {type : "pi", bind : number, iT : pttm, body : pttm}
-    | {type : "var", n : number};
+    | {type : "lambda", bind : ID, iT : pttm, body : pttm}
+    | {type : "pi", bind : ID, iT : pttm, body : pttm}
+    | {type : "var", n : ID};
     
 const TYPE_STAR : pttm = {type : "U0"};
 const TYPE_SQUARE : pttm = {type : "U1"};
+const ppPttm = (x : pttm) : string => JSON.stringify(x)
+
     
 type ty = pttm;
-type Context = Dict<number, ty>;
+type Context = Dict<ID, ty>;
 export type Option<T> = T | typeof undefined;
 
 
-const subst = (exp : pttm, from : number, to : pttm) : pttm => {
+const subst = (exp : pttm, from : ID, to : pttm) : pttm => {
     let sb = (subexp : pttm) : pttm => subst(subexp, from, to);
     if(((exp.type === "lambda")) && exp.bind !== from) {
         return {type: "lambda", bind : exp.bind, iT : exp.iT, body : sb(exp.body)};
@@ -41,7 +45,7 @@ const subst = (exp : pttm, from : number, to : pttm) : pttm => {
         return {type: "pi", bind : exp.bind, iT : exp.iT, body : sb(exp.body)};
     } else if (exp.type === "apply") {
         return {type : "apply", fun: sb(exp.fun), arg: sb(exp.arg)};
-    } else if (exp.type === "var" && exp.n === from) {
+    } else if (exp.type === "var" && ideq(exp.n, from)) {
         return to;
     } 
     return exp;
@@ -107,5 +111,7 @@ module.exports = {
     obeq,
     _add_to_dict,
     _find_in_dict,
-    _reverse_mapping
+    _reverse_mapping,
+    pprintDict,
+    ppPttm
 };
