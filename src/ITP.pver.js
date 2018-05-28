@@ -4,7 +4,7 @@
 // should named as ITP3.js
 
 import type {pttm, Dict, Option} from "./ITP2" 
-import {ideq} from './globalDef'
+import {ideq, ppID} from './globalDef'
 import type {ID} from "./globalDef"
 import {
     untyped_beta_conversion,
@@ -46,7 +46,7 @@ const addCtx = _add_to_dict;
 const findinCtx = (ctx: Context, n:ID) => _find_in_dict(j => ideq(n, j), ctx);
 const ppCtx = pprintDict(ppID, x => {
         let ret = "";
-        if(typeof x[0] === 'pttm'){
+        if(typeof (x[0]) === 'object'){
             ret = ret + " := " + ppPttm(x[0]);
         }
         return ret + " : " + ppPttm(x[1]);

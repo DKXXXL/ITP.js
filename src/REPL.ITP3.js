@@ -3,17 +3,27 @@
 // An REPL for ITP3, a general interpretation for all platform
 
 import type {ID} from "./globalDef"
-import {ppID} from "./globalDef"
+import {ppID, ideq} from "./globalDef"
 import type {pttm, Dict, Option} from "./ITP2" 
-import {pprintDict, ppPttm} from "./ITP2"
+import {pprintDict, ppPttm, _add_to_dict,_find_in_dict} from "./ITP2"
 import type {DefinitionList, Commands, Command, NewJudgement, Goal, Goals, PartialGoals, Context} from "./ITP.pver"
 import {pfconstructor,newtermChecker,pfChecker, ppCmd, ppCtx} from "./ITP.pver"
 
 
 
 type Actic = PartialGoals => Commands;
-type Generator<X> = () => Option<X> ;
+
 type TContext = Dict<ID, Tactic>;
+
+type Generator<X> = () => Option<X> ;
+// Array -> Generator
+const listGen= <X>(l : Array<X>) : Generator<X> => {
+    let index = 0;
+    return () => {
+        index = index + 1;
+        return l[index];
+    }
+}
 
 // MEDIUM LEVEL : META TACTIC
 // A Tactic is a instruction that can be interpreted into (A function from PartialGoals to Commands := Actic)
@@ -27,7 +37,7 @@ type Tactic =
 // TContext -> String
 const pprintTac = (x : Tactic) : string => {
     if(x.type === "cmds") {
-        return ppCmd(x.t);
+        return x.t.map(ppCmd).join('|');
     } else if(x.type === "seq") {
         return pprintTac(x.t0) + ";" + pprintTac(x.t1);
     } else if(x.type === "let") {
@@ -39,35 +49,30 @@ const pprintTac = (x : Tactic) : string => {
 }
 
 
-const donothing : Generator<Actic> = listGen([s => {type: "idtac"}])
+const donothing : Generator<Actic> = listGen([s => [{type: "idtac"}]])
 // The interpreter of Tactic
-const tacticIntp = (tctx : TContext, tac : Tactic) : Generator<Actic> => {
-    
+const tacticIntp = (tctx : TContext, tac_ : Tactic) : Generator<Actic> => {
+    const tac = tac_;
     if(tac.type === "cmds"){
         return listGen([s => tac.t]);
     } else if(tac.type === "seq") {
         const tip = t => tacticIntp(tctx, t);
         return concat_(tip(tac.t0), () => tip(tac.t1));
     } else if(tac.type === "let") {
-        return tacticIntp(_add_in_dict(tac.name, tac.bind, tctx), tac.body);
+        return tacticIntp(_add_to_dict(tac.name, tac.bind, tctx), tac.body);
     } else if(tac.type === "metavar") {
         const subs = _find_in_dict(x => ideq(x, tac.n), tctx);
         if(subs === undefined) {
             return donothing;
         }
         return tacticIntp(tctx, subs);
+    } else {
+        return donothing;
     }
 };
 const prettyprintTacCtx = pprintDict((x:ID) => x.toString(), pprintTac);
 
-// Array -> Generator
-const listGen= <X>(l : Array<X>) : Generator<X> => {
-    let index = 0;
-    return () => {
-        index = index + 1;
-        return l[index];
-    }
-}
+
 
 const concat = <X>(f : Generator<X>, g : Generator<X>):Generator<X> => {
                             let flag = true;
