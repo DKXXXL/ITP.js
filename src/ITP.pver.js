@@ -47,7 +47,7 @@ const findinCtx = (ctx: Context, n:ID) => _find_in_dict(j => ideq(n, j), ctx);
 const ppCtx = pprintDict(ppID, x => {
         let ret = "";
         if(typeof x[0] === 'pttm'){
-            ret = ret + " := " ppPttm(x[0]);
+            ret = ret + " := " + ppPttm(x[0]);
         }
         return ret + " : " + ppPttm(x[1]);
         });
@@ -80,6 +80,7 @@ export type Command =
     | {type : "conv", newform : NewJudgement} // type level calculation
     | {type : "let", bind: ID, term : pttm} // local definition
     | {type : "focus"}
+    | {type : "idtac"}
     
 const ppCmd = (x : Command) : string => JSON.stringify(x)
 

@@ -5,9 +5,9 @@
 import type {ID} from "./globalDef"
 import {ppID} from "./globalDef"
 import type {pttm, Dict, Option} from "./ITP2" 
-import {pprintDict} from "./ITP2"
+import {pprintDict, ppPttm} from "./ITP2"
 import type {DefinitionList, Commands, Command, NewJudgement, Goal, Goals, PartialGoals, Context} from "./ITP.pver"
-import {pfconstructor,newtermChecker,pfChecker, ppCmd} from "./ITP.pver"
+import {pfconstructor,newtermChecker,pfChecker, ppCmd, ppCtx} from "./ITP.pver"
 
 
 
@@ -22,8 +22,6 @@ type Tactic =
     {type : "cmds", t : Commands}
     | {type : "seq", t0 : Tactic, t1 : Tactic}
     | {type : "let", name : ID, bind : Tactic, body : Tactic}
-    | {type : "abs", name : ID, body : Tactic}
-    | {type : "call", f : Tactic}
     | {type : "metavar", n : ID}
 
 // TContext -> String
@@ -34,29 +32,30 @@ const pprintTac = (x : Tactic) : string => {
         return pprintTac(x.t0) + ";" + pprintTac(x.t1);
     } else if(x.type === "let") {
         return "let " + ppID(x.name) + " = " + pprintTac(x.bind) + " in " + pprintTac(x.body);
-    } else if(x.type === "abs") {
-        return "\\" + ppID(x.name) + " -> " + pprintTac(x.body);
-    } else if(x.type === "call") {
-        return pprintTac(x.f);
-    } else if (x.type === "tac") {
+    } else if(x.type === "metavar") {
         return ppID(x.n);
-    })
+    } 
     return "";
 }
 
+
+const donothing : Generator<Actic> = listGen([s => {type: "idtac"}])
 // The interpreter of Tactic
 const tacticIntp = (tctx : TContext, tac : Tactic) : Generator<Actic> => {
+    
     if(tac.type === "cmds"){
         return listGen([s => tac.t]);
     } else if(tac.type === "seq") {
         const tip = t => tacticIntp(tctx, t);
-        return concat(tip(tac.t0), tip(tac.t1));
+        return concat_(tip(tac.t0), () => tip(tac.t1));
     } else if(tac.type === "let") {
         return tacticIntp(_add_in_dict(tac.name, tac.bind, tctx), tac.body);
-    } else if(tac.type === "abs") {
-        
-    } else if(tac.type === "call") {
-
+    } else if(tac.type === "metavar") {
+        const subs = _find_in_dict(x => ideq(x, tac.n), tctx);
+        if(subs === undefined) {
+            return donothing;
+        }
+        return tacticIntp(tctx, subs);
     }
 };
 const prettyprintTacCtx = pprintDict((x:ID) => x.toString(), pprintTac);
@@ -84,6 +83,27 @@ const concat = <X>(f : Generator<X>, g : Generator<X>):Generator<X> => {
                                 return g(); 
                                 };
                         };
+
+const concat_ =<X>(f : Generator<X>, g : () => Generator<X>):Generator<X> => {
+                            let flag = true;
+                            let g_ : typeof undefined | Generator<X> = undefined;
+                            return () => {
+                                if(flag){
+                                    const r = f();
+                                    if(r !== undefined) {
+                                        return r;
+                                    } else {
+                                        flag = false;
+                                        g_ = g();
+                                    }
+                                }
+                                if(g_ === undefined) {
+                                    return undefined;
+                                } else {
+                                    return g_();
+                                }
+                                };
+                        };
 const joinGen = <X>(f : Generator<Generator<X>>) : Generator<X> => {
     let current = f();
     return () => {
@@ -102,7 +122,10 @@ const joinGen = <X>(f : Generator<Generator<X>>) : Generator<X> => {
     };
 };
 
-const mapGen = <X, Y>(fmap : X => Y, gen : Generator<X>) : Generator<Y> => (() => fmap(gen()));
+const mapOption = <X, Y> (fmap : X => Y):(Option<X> => Option<Y>) => x => {
+    if(x === undefined) {return undefined;} else {return fmap(x);}
+}
+const mapGen = <X, Y>(fmap : X => Y, gen : Generator<X>) : Generator<Y> => (() => mapOption(fmap)(gen()));
 
 
 
@@ -112,10 +135,14 @@ type Input<K> = string => K;
 type Output = string => string;
 type Error = string => typeof undefined;
 
-const inputAsGen = (i : Input) : Generator<Tactic> => (x => i(""));
+const inputAsGen = (i : Input<Tactic>) : Generator<Tactic> => (x => i(""));
 
 const ppPGs = (pg : PartialGoals) : string => 
-    pg.map((x,index) => {if(x != true){return index.toString() + "] " + ppCtx(x[0]) + " |- " ppPttm(x[1]);} return ""})
+    pg.map((x,index) => {
+                if(typeof x !== 'boolean'){
+                    return index.toString() + "] " + ppCtx(x[0]) + " |- " + ppPttm(x[1]);
+                } 
+                return "";})
         .filter(x => x !== "")
         .join("\n");
 
@@ -124,15 +151,21 @@ const ppPGs = (pg : PartialGoals) : string =>
 // the flatmap (joinGen) makes input into a generator of actic
 // because each tactic can deal with several times of interaction (a number of Commands)
 // we need to flatmap, and what's more, the envoke of input becomes implicit
-const interaction = (ioe : stdIO, tctx : TContext) : PartialGoals => Commands => {
+const interaction = (ioe : stdIO, tctx : TContext) : (PartialGoals => Commands) => {
     const tacticInput : Generator<Actic> = joinGen(mapGen(y => tacticIntp(tctx, y), inputAsGen(ioe.i)));
     return s => {
-        ioe.o(ppPgs(s));
-        return tacticInput();
+        ioe.o(ppPGs(s));
+        let tI = tacticInput();
+        while(tI === undefined){
+            tI = tacticInput();
+        }
+        return tI(s);
     }
 }
-const PFCONSOLE = (ioe : stdIO, tctx : TContext, dctx : DefinitionList, newty : pttm) : pttm => 
-    pfconstructor(interaction(ioe, tctx), ioe.e, [[dctx, newty]]);
+const PFCONSOLE = (ioe : stdIO, tctx : TContext, dctx : DefinitionList, newty : pttm) : pttm => {
+    const ctx : Context = dctx.map(x => [x[0], [(x[1][0] : pttm | "bottom" | false), x[1][1]]]);
+    return pfconstructor(interaction(ioe, tctx), ioe.e, [[ctx, newty]])[0];
+}
 
 
 // UPPER LEVEL : CONSOLE
@@ -158,8 +191,8 @@ const CONSOLE = (ioe : stdIO) : typeof undefined => {
             // Into Proof Mode
             const tm = PFCONSOLE(ioe, AllTactics, AllDefinitions, input.ty);
             if(!newtermChecker(AllDefinitions, input.name, tm, input.ty)) {ioe.e("Define Failed."); continue;}
-            AllDefinitions.push([input.name, tm]);
-        } else if(input.type === "addTactics") {
+            AllDefinitions.push([input.name, [tm, input.ty]]);
+        } else if(input.type === "addTactic") {
             AllTactics.push([input.name, input.tac]);
         } else if(input.type === "printScript") {
             input.outMethod(ProofScript);
@@ -167,7 +200,7 @@ const CONSOLE = (ioe : stdIO) : typeof undefined => {
             if(!pfChecker(AllDefinitions)) {ioe.e("Unexpected Internal Error. Cannot output definition."); continue;}
             input.outMethod(AllDefinitions);
         } else if(input.type === "printTacs"){
-            ioe.o(prettyprintTac(AllTactics));
+            ioe.o(prettyprintTacCtx(AllTactics));
         } 
     }
 

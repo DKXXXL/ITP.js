@@ -29,7 +29,7 @@ export type pttm =
     
 const TYPE_STAR : pttm = {type : "U0"};
 const TYPE_SQUARE : pttm = {type : "U1"};
-const ppPttm = (x : pttm) : string => JSON.stringify(x)
+const ppPttm = (x : pttm) : string => JSON.stringify(x);
 
     
 type ty = pttm;
