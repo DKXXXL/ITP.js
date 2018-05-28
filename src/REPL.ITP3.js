@@ -15,7 +15,9 @@ type Actic = PartialGoals => Commands;
 
 type TContext = Dict<ID, Tactic>;
 
+// Generator -- a lazy (potential) infinite list
 type Generator<X> = () => Option<X> ;
+
 // Array -> Generator
 const listGen= <X>(l : Array<X>) : Generator<X> => {
     let index = 0;
@@ -70,6 +72,7 @@ const tacticIntp = (tctx : TContext, tac_ : Tactic) : Generator<Actic> => {
         return donothing;
     }
 };
+
 const prettyprintTacCtx = pprintDict((x:ID) => x.toString(), pprintTac);
 
 
