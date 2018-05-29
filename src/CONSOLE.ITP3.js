@@ -216,6 +216,11 @@ const CONSOLE = (ioe : stdIO) : typeof undefined => {
 }
 
 
+function input_console(pg : PartialGoals):Commands{
+    
+}
+
+
 
 // Intended to make it monadic form
 // I think if I did that, I would be an idiot.
