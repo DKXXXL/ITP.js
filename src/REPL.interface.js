@@ -1,68 +1,27 @@
+import {CONSOLE} from "./CONSOLE.ITP3"
+import {parseToTact, parseToInstr} from "./parser.CONSOLE"
 
+const Fiber = require('fibers');
 const repl = require('repl');
 
-const replServer = repl.start({ prompt: '> ' });
+const stdoutput = (str) => (process.stdout.write(str), str)
+const stderr = (str) => (process.stderr.write(str), str)
 
-// I need first class continuation
+const consoleCo = 
+    Fiber((s) => CONSOLE(
+        {
+            i : (pg) => (stdoutput(pg), parseToTact(Fiber.yield())),
+            iI :(pg) => (stdoutput(pg), parseToInstr(Fiber.yield())),
+            o : stdoutput,
+            e : stderr
+        }
+    }));
 
-let onePromptEnd = undefined;
-let continueOnConsole = undefined;
-let currentInput = undefined;
-let waitForPrompt = undefined;
-// string -> string
+consoleCo.run(""); // Initialization.
 
-//function inputgeneralHandler() {
-//        onePromptEnd(cont(input));
-//        return input;
-//        
-//}
-//
-
-//function myEval(cmd, context, filename, callback) {
-//  // callback(null, cmd);
-//  onePromptEnd = function(cc) {
-//      continueOnConsole = cc;
-//      callback();
-//  };
-//  continueOnConsole(cmd);
-//  
-//}
-
-//function* inputgeneralHandlerGen(){
-//    while(true){
-//        onePromptEnd(cont(input));
-//        const hint = yield input;
-//    }
-//}
-
-async function inputgeneralHandler(s){
-    let C = undefined;
-    const input = await (new Promise(cont => continueOnConsole = cont;))
-    return input;
+function delegateConsole(cmd, context, filename, callback){
+    consoleCo.run(cmd);
+    callback(null, cmd);
 }
 
-function inputggg(s) {
-    const input = inputgeneralHandler(s);
-    if(typeof input === 'string') {
-        return input;
-    } else {
-        waitForPrompt();
-    }
-
-}
-
-
-function myEval(cmd, context, filename, callback) {
-  // callback(null, cmd);
-  waitForPrompt = function(cc) {
-      continueOnConsole = cc;
-      callback();
-  };
-  continueOnConsole(cmd);
-}
-
-function test() {
-    while(true) {
-        
-    }
-}
+const replServer = repl.start({ prompt: '> ', eval: myEval });
