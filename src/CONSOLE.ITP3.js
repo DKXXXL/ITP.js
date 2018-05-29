@@ -70,7 +70,7 @@ const tacticIntp = (tctx : TContext, tac_ : Tactic) : Generator<Actic> => {
         return tacticIntp(tctx, subs);
     } else {
         return donothing;
-    }
+    } 
 };
 
 const prettyprintTacCtx = pprintDict((x:ID) => x.toString(), pprintTac);
