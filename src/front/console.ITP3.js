@@ -2,7 +2,7 @@
 
 // An REPL for ITP3, a general interpretation for all platform
 
-import type {ID} from "../globalDef"
+import type {ID, Actic, Generator} from "../globalDef"
 import {ppID, ideq} from "../globalDef"
 import type {pttm, Dict, Option} from "../ITP2" 
 import {pprintDict, ppPttm, _add_to_dict,_find_in_dict} from "../ITP2"
@@ -11,12 +11,13 @@ import {pfconstructor,newtermChecker,pfChecker, ppCmd, ppCtx} from "../ITP.pver"
 
 
 
-type Actic = PartialGoals => Commands;
+
+
 
 type TContext = Dict<ID, Tactic>;
 
 // Generator -- a lazy (potential) infinite list
-type Generator<X> = () => Option<X> ;
+
 
 // Array -> Generator
 const listGen= <X>(l : Array<X>) : Generator<X> => {
@@ -31,7 +32,7 @@ const listGen= <X>(l : Array<X>) : Generator<X> => {
 // A Tactic is a instruction that can be interpreted into (A function from PartialGoals to Commands := Actic)
 
 type Tactic = 
-    {type : "cmds", t : Commands}
+    {type : "cmds", t : Command} // apply same command to all of the current subgoal
     | {type : "seq", t0 : Tactic, t1 : Tactic}
     | {type : "let", name : ID, bind : Tactic, body : Tactic}
     | {type : "metavar", n : ID}

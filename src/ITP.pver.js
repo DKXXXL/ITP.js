@@ -79,7 +79,8 @@ export type Command =
     | {type : "check", term : pttm}
     | {type : "conv", newform : NewJudgement} // type level calculation
     | {type : "let", bind: ID, term : pttm} // local definition
-    | {type : "focus"}
+    | {type : "focus", streamOfCmd : PartialGoals => Commands}
+    | {type : "defocus"}
     | {type : "idtac"}
     
 const ppCmd = (x : Command) : string => JSON.stringify(x)
@@ -190,8 +191,8 @@ const goaltransform = (ncmd : (PartialGoals) => Commands,warn: string => typeof 
                         ]] ];
     } else if(cmd.type === "focus") {
         // most special, it will hang up the current goal and star focusing on a particular partial goal
-        const term = pfconstructor(ncmd, warn, [goal])[0];
-        return [[true], [1, x => [term]]];
+        // const term = pfconstructor(ncmd, warn, [goal])[0];
+        // return [[true], [1, x => [term]]];
     } else if(cmd.type === "idtac") { 
         return [[goal], donothing];
     } else {
@@ -200,6 +201,10 @@ const goaltransform = (ncmd : (PartialGoals) => Commands,warn: string => typeof 
     }
 
 }
+
+
+
+
 
 // Core of this file, transform an array of partial goal into an array of term each with correct type
 // term finder in some sense
@@ -221,6 +226,40 @@ const pfconstructor = (ncmd : (PartialGoals) => Commands, warn: string => typeof
         return inverseTransform(pfconstructor(ncmd, warn, newGoals));
     }
 }
+
+
+// more generalized now
+// partial proof constructor
+// will stop constructing when meet defocus
+// always return the term constructed with all effort
+const ppfconstructor = (ncmd : (PartialGoals) => Commands, warn: string => typeof undefined, currentGoals : PartialGoals) : [PartialGoals, ArrayF<pttm, pttm>] => {
+    let nextcmds_ = ncmd(currentGoals);
+    if(nextcmds_[0].type === "defocus") {
+        // the way to stop
+        return [currentGoals, [currentGoals.length, x => x]];
+    }
+    while(nextcmds_.length !== currentGoals.length) {
+        warn("Error: Command number not enough");
+        nextcmds_ = ncmd(currentGoals);
+    }
+    const nextcmds : Commands = nextcmds_;
+    const newGoals_IT : [PartialGoals, ArrayF<pttm, pttm>] = combine(nextcmds.map((cmd, index) => goaltransform(ncmd, warn, cmd, currentGoals[index])));
+    const newGoals : PartialGoals = newGoals_IT[0];
+    if(newGoals_IT[1][0] !== newGoals.length) {warn("Internal Error: Domain number incoincides with array element number");}
+    if(newGoals.filter(x => x !== true).length === 0) {
+        return newGoals_IT;
+    }
+    const retGoals_IT = ppfconstructor(ncmd, warn, newGoals);
+    return [retGoals_IT[0], [retGoals_IT[1][0]], x => newGoals_IT[1][1](retGoals_IT[1][1](x))];
+    // if(newGoals_IT[1][0] !== newGoals.length) {warn("Internal Error: Domain number incoincides with array element number");}
+    // const inverseTransform : Array<pttm> => Array<pttm> = newGoals_IT[1][1];
+    // if(newGoals.filter(x => x !== true).length === 0) {
+    //     return inverseTransform(newGoals.map(x => ((undefined : any): pttm)));
+    // } else {
+    //     return inverseTransform(pfconstructor(ncmd, warn, newGoals));
+    // }
+}
+
 
 module.exports = {
     pfconstructor,
