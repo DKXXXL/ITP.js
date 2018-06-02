@@ -1,5 +1,5 @@
-import {CONSOLE} from "./CONSOLE.ITP3"
-import {parseToTact, parseToInstr} from "./parser.CONSOLE"
+import {CONSOLE} from "./console.ITP3"
+import {parseToTact, parseToInstr} from "./parser.ITP3"
 
 const Fiber = require('fibers');
 const repl = require('repl');

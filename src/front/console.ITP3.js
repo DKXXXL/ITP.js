@@ -2,12 +2,12 @@
 
 // An REPL for ITP3, a general interpretation for all platform
 
-import type {ID} from "./globalDef"
-import {ppID, ideq} from "./globalDef"
-import type {pttm, Dict, Option} from "./ITP2" 
-import {pprintDict, ppPttm, _add_to_dict,_find_in_dict} from "./ITP2"
-import type {DefinitionList, Commands, Command, NewJudgement, Goal, Goals, PartialGoals, Context} from "./ITP.pver"
-import {pfconstructor,newtermChecker,pfChecker, ppCmd, ppCtx} from "./ITP.pver"
+import type {ID} from "../globalDef"
+import {ppID, ideq} from "../globalDef"
+import type {pttm, Dict, Option} from "../ITP2" 
+import {pprintDict, ppPttm, _add_to_dict,_find_in_dict} from "../ITP2"
+import type {DefinitionList, Commands, Command, NewJudgement, Goal, Goals, PartialGoals, Context} from "../ITP.pver"
+import {pfconstructor,newtermChecker,pfChecker, ppCmd, ppCtx} from "../ITP.pver"
 
 
 
