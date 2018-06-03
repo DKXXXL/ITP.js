@@ -1,32 +1,23 @@
 //@flow
 
 // An REPL for ITP3, a general interpretation for all platform
+// An abstraction about interaction
+// where includes information about Instructions, Targeted-Tactic, Tactic, 
+// which can be then translated into (PartialGoals => Commands) 
 
-import type {ID, Actic, Generator} from "../globalDef"
+import type {ID, Generator} from "../globalDef"
 import {ppID, ideq} from "../globalDef"
 import type {pttm, Dict, Option} from "../ITP2" 
 import {pprintDict, ppPttm, _add_to_dict,_find_in_dict} from "../ITP2"
 import type {DefinitionList, Commands, Command, NewJudgement, Goal, Goals, PartialGoals, Context} from "../ITP.pver"
 import {pfconstructor,newtermChecker,pfChecker, ppCmd, ppCtx} from "../ITP.pver"
 
-
+type Actic = PartialGoals => Commands;
 
 
 
 
 type TContext = Dict<ID, Tactic>;
-
-// Generator -- a lazy (potential) infinite list
-
-
-// Array -> Generator
-const listGen= <X>(l : Array<X>) : Generator<X> => {
-    let index = 0;
-    return () => {
-        index = index + 1;
-        return l[index];
-    }
-}
 
 // MEDIUM LEVEL : META TACTIC
 // A Tactic is a instruction that can be interpreted into (A function from PartialGoals to Commands := Actic)
@@ -37,10 +28,15 @@ type Tactic =
     | {type : "let", name : ID, bind : Tactic, body : Tactic}
     | {type : "metavar", n : ID}
 
+// A group of targeted tactic
+// number denote the goal number targeted
+type TTactic = Dict<number, Tactic>;
+
+
 // TContext -> String
 const pprintTac = (x : Tactic) : string => {
     if(x.type === "cmds") {
-        return x.t.map(ppCmd).join('|');
+        return ppCmd(x.t);
     } else if(x.type === "seq") {
         return pprintTac(x.t0) + ";" + pprintTac(x.t1);
     } else if(x.type === "let") {
@@ -52,12 +48,15 @@ const pprintTac = (x : Tactic) : string => {
 }
 
 
-const donothing : Generator<Actic> = listGen([s => [{type: "idtac"}]])
-// The interpreter of Tactic
+const donothing : Generator<Actic> = listGen([s => Array(s.length).fill({type : "idtac"})])
+// The interpreter of A single tactic
+// tactic has a property that it is not going to be exposed to the current goal number
+// so a single tactic will do things to all the possible goals
+// and only TTactic -- targeted tactic know things about goal number
 const tacticIntp = (tctx : TContext, tac_ : Tactic) : Generator<Actic> => {
     const tac = tac_;
     if(tac.type === "cmds"){
-        return listGen([s => tac.t]);
+        return listGen([s => Array(s.length).fill(tac.t)]);
     } else if(tac.type === "seq") {
         const tip = t => tacticIntp(tctx, t);
         return concat_(tip(tac.t0), () => tip(tac.t1));
@@ -74,77 +73,46 @@ const tacticIntp = (tctx : TContext, tac_ : Tactic) : Generator<Actic> => {
     } 
 };
 
+
+// starting from here, code is elegant (I think) but ambiguous
+// the reason is due to Generator<> is a function with side-effect
+
+// join is actually a flip makes (() => PG => CMDs ) -> (PG => () => CMDs), where the second 
+// parenthesis can be auto applied when PG is applied, makes it into (PG => CMDs)
+const __joinActic_endwithdefocus : (Generator<Actic> => Actic) = gen => {
+            const infGen = endswith(x => Array(x.length).fill({type : "defocus"}), gen); 
+            return pgs => infGen()(pgs);
+        }
+
+// translate TTactic into Actic
+// actually, Tactic class is much easier to be translated
+// The reason TTactic can be translated is largely due to the "focus" command
+const ttacticIntp = (tctx : TContext, ttac_ : TTactic) : Generator<Actic> => {
+    const ttac = ttac_;
+    const idtac : Actic = pgs => Array(pgs.length).fill({type : "idtac"});
+    const dictofGen : Dict<number, Generator<Actic>> = ttac.map(x => [x[0], tacticIntp(tctx, x[1])]);
+
+    const arrayOfFocus : Dict<number, Command> = dictofGen.map(x => [x[0], __joinActic_endwithdefocus(x[1])])
+                                                          .map(x => [x[0],{type : "focus", streamOfCmd : x[1]}])
+    
+    return listGen([pgs => toArrayFillBlankWith(arrayOfFocus, pgs.length, idtac)]);
+}
+
 const prettyprintTacCtx = pprintDict((x:ID) => x.toString(), pprintTac);
 
-
-
-const concat = <X>(f : Generator<X>, g : Generator<X>):Generator<X> => {
-                            let flag = true;
-                            return () => {
-                                if(flag){
-                                    const r = f();
-                                    if(r !== undefined) {
-                                        return r;
-                                    } else {
-                                        flag = false;
-                                    }
-                                }
-                                return g(); 
-                                };
-                        };
-
-const concat_ =<X>(f : Generator<X>, g : () => Generator<X>):Generator<X> => {
-                            let flag = true;
-                            let g_ : typeof undefined | Generator<X> = undefined;
-                            return () => {
-                                if(flag){
-                                    const r = f();
-                                    if(r !== undefined) {
-                                        return r;
-                                    } else {
-                                        flag = false;
-                                        g_ = g();
-                                    }
-                                }
-                                if(g_ === undefined) {
-                                    return undefined;
-                                } else {
-                                    return g_();
-                                }
-                                };
-                        };
-const joinGen = <X>(f : Generator<Generator<X>>) : Generator<X> => {
-    let current = f();
-    return () => {
-        if(current === undefined) {
-            return undefined;
-        }
-        const r = current();
-        if(r === undefined) {
-            current = f();
-            if(current === undefined) {
-            return undefined;
-            }
-        } else {
-            return r;
-        }
-    };
-};
 
 const mapOption = <X, Y> (fmap : X => Y):(Option<X> => Option<Y>) => x => {
     if(x === undefined) {return undefined;} else {return fmap(x);}
 }
-const mapGen = <X, Y>(fmap : X => Y, gen : Generator<X>) : Generator<Y> => (() => mapOption(fmap)(gen()));
 
 
-
-type stdIO = {i : Input<Tactic>, iI : Input<INSTRUCTION>, o : Output, e : Error};
+type stdIO = {i : Input<TTactic>, iI : Input<INSTRUCTION>, o : Output, e : Error};
 
 type Input<K> = string => K;
 type Output = string => string;
 type Error = string => typeof undefined;
 
-const inputAsGen = (i : Input<Tactic>) : Generator<Tactic> => (x => i(""));
+const inputAsGen = (i : Input<TTactic>) : Generator<TTactic> => (x => i(""));
 
 const ppPGs = (pg : PartialGoals) : string => 
     pg.map((x,index) => {
@@ -161,7 +129,7 @@ const ppPGs = (pg : PartialGoals) : string =>
 // because each tactic can deal with several times of interaction (a number of Commands)
 // we need to flatmap, and what's more, the envoke of input becomes implicit
 const interaction = (ioe : stdIO, tctx : TContext) : (PartialGoals => Commands) => {
-    const tacticInput : Generator<Actic> = joinGen(mapGen(y => tacticIntp(tctx, y), inputAsGen(ioe.i)));
+    const tacticInput : Generator<Actic> = joinGen(mapGen(y => ttacticIntp(tctx, y), inputAsGen(ioe.i)));
     return s => {
         ioe.o(ppPGs(s));
         let tI = tacticInput();

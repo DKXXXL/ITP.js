@@ -6,6 +6,8 @@ export type Generator<X> = () => Option<X> ;
 const ideq = (x : ID, y : ID) => x === y;
 const ppID = (x: ID) :string => x; 
 
+export type Option<T> = T | typeof undefined;
+
 
 // Generator -- a lazy (potential) infinite list
 
@@ -106,6 +108,13 @@ const toArray = <X>(d : Dict<number, X>):Array<X> => {
         ret.push(result);
     }
 }
+
+const toArrayFillBlankWith = <X>(d : Dict<number, X>, maxItemNumber : number, x : X):Array<X> => 
+    Array(maxItemNumber).fill(undefined).map((__x, index) => {
+        const ret = _find_in_dict(j => j === index); 
+        if(ret !== undefined){return ret;}else{return x;}
+    });
+
 
 const pprintDict = <K,V>(pk : K => string, pv : V => string) :( Dict<K,V> => string) => 
     d => d.map((kv) => pk(kv[0]) + " : " + pv(kv[1])).join(",")

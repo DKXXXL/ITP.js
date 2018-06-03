@@ -21,7 +21,7 @@ const ppPttm = (x : pttm) : string => JSON.stringify(x);
     
 type ty = pttm;
 type Context = Dict<ID, ty>;
-export type Option<T> = T | typeof undefined;
+
 
 
 const subst = (exp : pttm, from : ID, to : pttm) : pttm => {
