@@ -5,9 +5,9 @@
 // where includes information about Instructions, Targeted-Tactic, Tactic, 
 // which can be then translated into (PartialGoals => Commands) 
 
-import type {ID, Generator} from "../globalDef"
-import {ppID, ideq} from "../globalDef"
-import type {pttm, Dict, Option} from "../ITP2" 
+import type {ID, Generator, Dict, Option} from "../globalDef"
+import {ideq, ppID, concat, concat_, joinGen, mapGen, toArrayFillBlankWith, endswith, listGen, obeq} from "../globalDef"
+import type {pttm} from "../ITP2" 
 import {pprintDict, ppPttm, _add_to_dict,_find_in_dict} from "../ITP2"
 import type {DefinitionList, Commands, Command, NewJudgement, Goal, Goals, PartialGoals, Context} from "../ITP.pver"
 import {pfconstructor,newtermChecker,pfChecker, ppCmd, ppCtx} from "../ITP.pver"
@@ -89,7 +89,7 @@ const __joinActic_endwithdefocus : (Generator<Actic> => Actic) = gen => {
 // The reason TTactic can be translated is largely due to the "focus" command
 const ttacticIntp = (tctx : TContext, ttac_ : TTactic) : Generator<Actic> => {
     const ttac = ttac_;
-    const idtac : Actic = pgs => Array(pgs.length).fill({type : "idtac"});
+    const idtac : Command = ({type : "idtac"});
     const dictofGen : Dict<number, Generator<Actic>> = ttac.map(x => [x[0], tacticIntp(tctx, x[1])]);
 
     const arrayOfFocus : Dict<number, Command> = dictofGen.map(x => [x[0], __joinActic_endwithdefocus(x[1])])
@@ -101,9 +101,7 @@ const ttacticIntp = (tctx : TContext, ttac_ : TTactic) : Generator<Actic> => {
 const prettyprintTacCtx = pprintDict((x:ID) => x.toString(), pprintTac);
 
 
-const mapOption = <X, Y> (fmap : X => Y):(Option<X> => Option<Y>) => x => {
-    if(x === undefined) {return undefined;} else {return fmap(x);}
-}
+
 
 
 type stdIO = {i : Input<TTactic>, iI : Input<INSTRUCTION>, o : Output, e : Error};
