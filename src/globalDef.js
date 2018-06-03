@@ -5,6 +5,7 @@ export type UDEF = typeof undefined;
 export type Generator<X> = () => Option<X> ;
 const ideq = (x : ID, y : ID) => x === y;
 const ppID = (x: ID) :string => x; 
+const toID = (x : string) : ID => x;
 
 export type Option<T> = T | typeof undefined;
 
@@ -125,7 +126,7 @@ const pprintDict = <K,V>(pk : K => string, pv : V => string) :( Dict<K,V> => str
 
 
 
-module.exports = {ideq, ppID, obeq,
+module.exports = {ideq, ppID, obeq, toID,
                     concat, concat_, joinGen, mapGen, toArrayFillBlankWith, endswith, listGen, 
                     _add_to_dict, _find_in_dict, _reverse_mapping, pprintDict};
 
