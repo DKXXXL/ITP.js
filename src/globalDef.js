@@ -76,9 +76,12 @@ const joinGen = <X>(f : Generator<Generator<X>>) : Generator<X> => {
 };
 
 const mapGen = <X, Y>(fmap : X => Y, gen : Generator<X>) : Generator<Y> => (() => mapOption(fmap)(gen()));
+const mapOption = <X, Y> (fmap : X => Y):(Option<X> => Option<Y>) => x => {
+    if(x === undefined) {return undefined;} else {return fmap(x);}
+}
 const endswith = <X>(x : X, gen : Generator<X>): (() => X) => {
-    return s => {
-        const ret = gen(s);
+    return () => {
+        const ret = gen();
         if(ret === undefined) {return x;}
         return ret;
     };
@@ -103,15 +106,16 @@ const toArray = <X>(d : Dict<number, X>):Array<X> => {
     let i = 0;
     let ret : Array<X> = [];
     while(true) {
-        const result : X = (_find_in_dict(j => j === i, d));
+        const result : Option<X> = (_find_in_dict(j => j === i, d));
         if(result === undefined){return ret;}
         ret.push(result);
     }
+    return ret;
 }
 
 const toArrayFillBlankWith = <X>(d : Dict<number, X>, maxItemNumber : number, x : X):Array<X> => 
     Array(maxItemNumber).fill(undefined).map((__x, index) => {
-        const ret = _find_in_dict(j => j === index); 
+        const ret = _find_in_dict(j => j === index, d); 
         if(ret !== undefined){return ret;}else{return x;}
     });
 
@@ -121,5 +125,7 @@ const pprintDict = <K,V>(pk : K => string, pv : V => string) :( Dict<K,V> => str
 
 
 
-module.exports = {ideq, ppID, concat, concat_, joinGen, mapGen};
+module.exports = {ideq, ppID, obeq,
+                    concat, concat_, joinGen, mapGen, toArrayFillBlankWith, endswith, listGen, 
+                    _add_to_dict, _find_in_dict, _reverse_mapping, pprintDict};
 

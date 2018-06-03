@@ -1,6 +1,6 @@
 //@flow
-import type {ID} from './globalDef'
-import {ideq} from './globalDef'
+import type {ID, Dict, Option} from './globalDef'
+import {ideq, _add_to_dict, _find_in_dict, _reverse_mapping, pprintDict, obeq} from './globalDef'
 
 
 

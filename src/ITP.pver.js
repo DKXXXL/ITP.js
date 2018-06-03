@@ -3,9 +3,9 @@
 // A prover : Extend Coc with definition, become lambdaD
 // should named as ITP3.js
 
-import type {pttm, Dict, Option} from "./ITP2" 
+import type {pttm} from "./ITP2" 
 import {ideq, ppID} from './globalDef'
-import type {ID} from "./globalDef"
+import type {ID, Dict, Option} from "./globalDef"
 import {
     untyped_beta_conversion,
     has_type,
@@ -193,7 +193,7 @@ const goaltransform = (ncmd : (PartialGoals) => Commands,warn: string => typeof 
         // most special, it will hang up the current goal and star focusing on a particular partial goal
         // const term = pfconstructor(ncmd, warn, [goal])[0];
         // return [[true], [1, x => [term]]];
-        return ppfconstructor(cmd.streamOfCmd, warn, currentGoals);
+        return ppfconstructor(cmd.streamOfCmd, warn, [goal]);
     } else if(cmd.type === "idtac") { 
         return [[goal], donothing];
     } else {
@@ -251,7 +251,7 @@ const ppfconstructor = (ncmd : (PartialGoals) => Commands, warn: string => typeo
         return newGoals_IT;
     }
     const retGoals_IT = ppfconstructor(ncmd, warn, newGoals);
-    return [retGoals_IT[0], [retGoals_IT[1][0]], x => newGoals_IT[1][1](retGoals_IT[1][1](x))];
+    return [retGoals_IT[0], [retGoals_IT[1][0], x => newGoals_IT[1][1](retGoals_IT[1][1](x))]];
     // if(newGoals_IT[1][0] !== newGoals.length) {warn("Internal Error: Domain number incoincides with array element number");}
     // const inverseTransform : Array<pttm> => Array<pttm> = newGoals_IT[1][1];
     // if(newGoals.filter(x => x !== true).length === 0) {
