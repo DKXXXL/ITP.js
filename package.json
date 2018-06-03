@@ -4,11 +4,14 @@
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-preset-flow": "^6.23.0",
-    "fibers":"^2.0.2",
+    "fibers": "^2.0.2",
     "flow-bin": "^0.41.0"
   },
   "scripts": {
     "flow": "flow",
     "build": "babel src -d lib"
+  },
+  "dependencies": {
+    "npm": "^6.1.0"
   }
 }
