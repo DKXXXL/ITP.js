@@ -193,6 +193,7 @@ const goaltransform = (ncmd : (PartialGoals) => Commands,warn: string => typeof 
         // most special, it will hang up the current goal and star focusing on a particular partial goal
         // const term = pfconstructor(ncmd, warn, [goal])[0];
         // return [[true], [1, x => [term]]];
+        return ppfconstructor(cmd.streamOfCmd, warn, currentGoals);
     } else if(cmd.type === "idtac") { 
         return [[goal], donothing];
     } else {

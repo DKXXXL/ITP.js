@@ -2,20 +2,7 @@
 import type {ID} from './globalDef'
 import {ideq} from './globalDef'
 
-export type Dict<K, V> = Array<[K, V]>;
 
-
-const obeq = (a: ?Object, b:?Object):boolean => (typeof a === typeof b) && (JSON.stringify(a) === JSON.stringify(b));
-
-//let lift_maybe = <D,C>(f: D => C): ((D | undefined) => (C | undefined)) => 
-//            (input : D | undefined) => {if (D !== undefined) {return f(D);} else {return undefined;} }
-
-const _add_to_dict = <K, V>(newterm : K, newtype : V, ctx: Dict<K,V>) : Dict<K,V> => {let r = ctx.slice(); r.push([newterm, newtype]); return r;}
-const _find_in_dict = <K,V>(pred: K => boolean, ctx : Dict<K,V>) : Option<V> => (x => {if(!x){return x[1];}else{return undefined;}})(ctx.filter(x => pred(x[0]))[0]);
-const _reverse_mapping = <K, V>(d : Dict<K,V>) : Dict<V,K> => d.map(x => [x[1], x[0]]);
-
-const pprintDict = <K,V>(pk : K => string, pv : V => string) :( Dict<K,V> => string) => 
-    d => d.map((kv) => pk(kv[0]) + " : " + pv(kv[1])).join(",")
 
 // Calculus of Construction
 // pttm = pre-typed term
