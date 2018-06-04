@@ -18,8 +18,8 @@ let parseToInstr = parseToInstrGen(printDefToIO, printScriptToIO);
 const consoleCo = 
     Fiber((s) => CONSOLE(
         {
-            i : (pg) => (stdoutput(pg), parseToTTact(Fiber.yield())),
-            iI :(pg) => (stdoutput(pg), parseToInstr(Fiber.yield())),
+            i : (pg) => (stdoutput(pg), parseToTTact(() => Fiber.yield())),
+            iI :(pg) => (stdoutput(pg), parseToInstr(() => Fiber.yield())),
             o : stdoutput,
             e : stderr
         }

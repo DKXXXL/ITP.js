@@ -1,4 +1,4 @@
-import {toID} from "../globalDef"
+import {toID, debug} from "../globalDef"
 const ParserC = require("parsimmon");
 
 const optWS = ParserC.optWhitespace;
@@ -129,10 +129,37 @@ const langInstructionGen = (defaultprintDef, defaultprintScript) => ParserC.crea
     terminate : () => ParserC.string("terminate").wrap(optWS).result({type : "terminate"})
 })
 
-const parseToTTact = (s) => langTTactic.all.tryParse(s)
+const parseToTTact = (src) => {
+        let ret = undefined;
+        while(true) {
+            try{
+                
+                ret = langTTactic.all.tryParse(src());
+            } catch(err) {
+                debug("Parsing TTactic failed");
+                debug(JSON.stringify(err));
+                continue;
+            }
+            debug("Parsing TTactic success");
+            return ret;
+        }
+    }
 const parseToInstrGen = (pdef, pscript) => {
         const langInstr = langInstructionGen(pdef, pscript);
-        return (s) => langInstr.all.tryParse(s);
+        return (src) => {
+        let ret = undefined;
+        while(true) {
+            try{
+                ret = langInstr.all.tryParse(src());
+            } catch(err) {
+                debug("Parsing Instruction failed");
+                continue;
+            }
+            debug("Parsing Instruction Success");
+            debug(JSON.stringify(err));
+            return ret;
+        }
+    }
 }
 
 module.exports = {
