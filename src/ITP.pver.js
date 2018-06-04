@@ -51,6 +51,7 @@ const ppCtx = pprintDict(ppID, x => {
         }
         return ret + " : " + ppPttm(x[1]);
         });
+
 //type DefContext = Dict<ID, [pttm, pttm]>;
 //type GlobalContext = Context;
 type Judgement = [Context, pttm];
@@ -62,6 +63,7 @@ export type NewJudgement = pttm;
 export type Commands = Array<Command>;
 type ArrayF<Domain, Codomain> = [number, Array<Domain> => Array<Codomain>]; // size of doman * function
 export type DefinitionList = Dict<ID, [pttm, pttm]>;
+const ppDefL : DefinitionList => string = pprintDict(ppID, x => " := " + ppPttm(x[0]) + " : " + ppPttm(x[1]));
 
 // homomorphism
 const connect = <D,C>(f : ArrayF<D,C>, g: ArrayF<D,C>) : ArrayF<D,C> => {
@@ -268,5 +270,6 @@ module.exports = {
     newtermChecker,
     pfChecker,
     ppCmd,
-    ppCtx
+    ppCtx,
+    ppDefL
 }

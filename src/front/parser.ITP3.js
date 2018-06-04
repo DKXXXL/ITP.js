@@ -1,3 +1,5 @@
+
+
 const ParserC = require("parsimmon");
 
 const optWS = ParserC.optWhitespace;
@@ -110,7 +112,7 @@ const langTTactic = ParserC.createLanguage({
                 ).sepBy1(ParserC.string(",")).wrap(ParserC.string("["), ParserC.string(")"))
 })
 
-const langInstruction = ParserC.createLanguage({
+const langInstructionGen = (defaultprintDef, defaultprintScript) => ParserC.createLanguage({
     all: (r) => ParserC.alt(r.addDef, r.addTactic, r.printScript, r.printDef, r.printTacs, r.terminate),
     addDef : () => ParserC.seqMap(
                 optWS.skip(ParserC.string("addDef")).then(langTerm.Variable.wrap(WS,WS)),
@@ -122,10 +124,21 @@ const langInstruction = ParserC.createLanguage({
                 langTactic.tacs.wrap(optWS, optWS),
                 (name, binding) => {type : "addTactic", name : name.n, ty : binding}
             ),
-    printScript : () => ParserC.string("printScript").wrap(optWS).result({type : "printScript", outMethod : }),
-    printDef : () => ParserC.string("printDef").wrap(optWS).result({type : "printDef", outMethod : }),
+    printScript : () => ParserC.string("printScript").wrap(optWS).result({type : "printScript", outMethod : defaultprintScript}),
+    printDef : () => ParserC.string("printDef").wrap(optWS).result({type : "printDef", outMethod : defaultprintDef}),
     printTacs : () => ParserC.string("printTacs").wrap(optWS).result({type : "printTacs"}),
     terminate : () => ParserC.string("terminate").wrap(optWS).result({type : "terminate"})
 })
+
+const parseToTTact = (s) => langTTactic.all.tryParse(s)
+const parseToInstrGen = (pdef, pscript) => {
+        const langInstr = langInstructionGen(pdef, pscript);
+        return (s) => langInstr.all.tryParse(s);
+}
+
+module.exports = {
+    parseToTTact,
+    parseToInstrGen
+};
 
 

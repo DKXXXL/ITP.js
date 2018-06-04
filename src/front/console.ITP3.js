@@ -10,7 +10,8 @@ import {ideq, ppID, concat, concat_, joinGen, mapGen, toArrayFillBlankWith, ends
 import type {pttm} from "../ITP2" 
 import {pprintDict, ppPttm, _add_to_dict,_find_in_dict} from "../ITP2"
 import type {DefinitionList, Commands, Command, NewJudgement, Goal, Goals, PartialGoals, Context} from "../ITP.pver"
-import {pfconstructor,newtermChecker,pfChecker, ppCmd, ppCtx} from "../ITP.pver"
+import {pfconstructor,newtermChecker,pfChecker, ppCmd, ppCtx, ppDefL} from "../ITP.pver"
+
 
 type Actic = PartialGoals => Commands;
 
@@ -154,6 +155,10 @@ type INSTRUCTION =
     | {type : "printTacs"}
     | {type : "terminate"}
 
+
+const defaultprintDef = (o : string => typeof undefined) : (DefinitionList => typeof undefined) => (x => o(ppDefL(x)));
+const defaultprintScript = (o : string => typeof undefined) : (string => typeof undefined) => (s => o(s));
+
 const CONSOLE = (ioe : stdIO) : typeof undefined => {
     let AllDefinitions : DefinitionList = [];
     let AllTactics : TContext = [];
@@ -184,7 +189,9 @@ const CONSOLE = (ioe : stdIO) : typeof undefined => {
 
 
 module.exports = {
-    CONSOLE
+    CONSOLE,
+    defaultprintDef,
+    defaultprintScript
 };
 
 // Intended to make it monadic form
