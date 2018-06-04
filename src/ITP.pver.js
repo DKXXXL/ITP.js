@@ -79,9 +79,10 @@ export type Command =
     | {type : "check", term : pttm}
     | {type : "conv", newform : NewJudgement} // type level calculation
     | {type : "let", bind: ID, term : pttm} // local definition
-    | {type : "focus", streamOfCmd : PartialGoals => Commands}
-    | {type : "defocus"}
     | {type : "idtac"}
+    | {type : "focus", streamOfCmd : PartialGoals => Commands} // not open
+    | {type : "defocus"} // not open
+
     
 const ppCmd = (x : Command) : string => JSON.stringify(x)
 
