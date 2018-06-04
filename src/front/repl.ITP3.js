@@ -10,7 +10,7 @@ const stderr = (str) => (process.stderr.write(str), str)
 const printDefToIO = defaultprintDef(stdoutput);
 const printScriptToIO = defaultprintScript(stdoutput);
 
-const parseToInstr = parseToInstrGen(printDefToIO, printScriptToIO);
+let parseToInstr = parseToInstrGen(printDefToIO, printScriptToIO);
 
 const consoleCo = 
     Fiber((s) => CONSOLE(
@@ -20,7 +20,7 @@ const consoleCo =
             o : stdoutput,
             e : stderr
         }
-    }));
+    ));
 
 consoleCo.run(""); // Initialization.
 
