@@ -111,5 +111,21 @@ const langTTactic = ParserC.createLanguage({
 })
 
 const langInstruction = ParserC.createLanguage({
-        
+    all: (r) => ParserC.alt(r.addDef, r.addTactic, r.printScript, r.printDef, r.printTacs, r.terminate),
+    addDef : () => ParserC.seqMap(
+                optWS.skip(ParserC.string("addDef")).then(langTerm.Variable.wrap(WS,WS)),
+                langTerm.Value.wrap(optWS, optWS),
+                (name, binding) => {type : "addDef", name : name.n, ty : binding}
+            ),
+    addTactic : () => ParserC.seqMap(
+                optWS.skip(ParserC.string("addTactic")).then(langTerm.Variable.wrap(WS,WS)),
+                langTactic.tacs.wrap(optWS, optWS),
+                (name, binding) => {type : "addTactic", name : name.n, ty : binding}
+            ),
+    printScript : () => ParserC.string("printScript").wrap(optWS).result({type : "printScript", outMethod : }),
+    printDef : () => ParserC.string("printDef").wrap(optWS).result({type : "printDef", outMethod : }),
+    printTacs : () => ParserC.string("printTacs").wrap(optWS).result({type : "printTacs"}),
+    terminate : () => ParserC.string("terminate").wrap(optWS).result({type : "terminate"})
 })
+
+
