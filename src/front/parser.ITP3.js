@@ -6,7 +6,9 @@ const WS = ParserC.whitespace;
 const foldToApp = (xs) => xs.reduce((f, x) => {type : "apply", fun : f, arg : x});
 
 const numberChar = "1234567890";
-const abt = "qwertyuiopasdfghjklzxcvbnm";
+const NumberParser = ParserC.regex(/[0-9]+/);
+const smallabt = "qwertyuiopasdfghjklzxcvbnm";
+const abt = smallabt + smallabt.toUpperCase();
 const symbolChar = "!@#$%^&-_+="
 
 
@@ -99,5 +101,15 @@ const langTactic = ParserC.createLanguage(
 
 
 const langTTactic = ParserC.createLanguage({
+        all : (r) => ParserC.alt(r.ttactic, langTactic.tacs.map(x => [[0, x]]))
+        ttactic: () => 
+                ParserC.seqMap(
+                    NumberParser.wrap(optWS, optWS).skip(ParserC.string(":")),
+                    langTactic.tac.wrap(optWS, optWS),
+                    (target, tactic) => [Number(target), tactic]
+                ).sepBy1(ParserC.string(",")).wrap(ParserC.string("["), ParserC.string(")"))
+})
 
+const langInstruction = ParserC.createLanguage({
+        
 })
