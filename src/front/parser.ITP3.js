@@ -1,5 +1,4 @@
-
-
+import {toID} from "../globalDef"
 const ParserC = require("parsimmon");
 
 const optWS = ParserC.optWhitespace;

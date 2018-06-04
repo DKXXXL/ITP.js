@@ -1,5 +1,7 @@
 //@flow
 
+const debug = (s) => console.log(s + "\n");
+
 export type ID = string;
 export type UDEF = typeof undefined;
 export type Generator<X> = () => Option<X> ;
@@ -126,7 +128,7 @@ const pprintDict = <K,V>(pk : K => string, pv : V => string) :( Dict<K,V> => str
 
 
 
-module.exports = {ideq, ppID, obeq, toID,
+module.exports = {ideq, ppID, obeq, toID, debug,
                     concat, concat_, joinGen, mapGen, toArrayFillBlankWith, endswith, listGen, 
                     _add_to_dict, _find_in_dict, _reverse_mapping, pprintDict};
 

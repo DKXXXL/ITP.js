@@ -6,7 +6,7 @@
 // which can be then translated into (PartialGoals => Commands) 
 
 import type {ID, Generator, Dict, Option} from "../globalDef"
-import {ideq, ppID, concat, concat_, joinGen, mapGen, toArrayFillBlankWith, endswith, listGen, obeq} from "../globalDef"
+import {debug, ideq, ppID, concat, concat_, joinGen, mapGen, toArrayFillBlankWith, endswith, listGen, obeq} from "../globalDef"
 import type {pttm} from "../ITP2" 
 import {pprintDict, ppPttm, _add_to_dict,_find_in_dict} from "../ITP2"
 import type {DefinitionList, Commands, Command, NewJudgement, Goal, Goals, PartialGoals, Context} from "../ITP.pver"
@@ -140,6 +140,7 @@ const interaction = (ioe : stdIO, tctx : TContext) : (PartialGoals => Commands) 
 }
 const PFCONSOLE = (ioe : stdIO, tctx : TContext, dctx : DefinitionList, newty : pttm) : pttm => {
     const ctx : Context = dctx.map(x => [x[0], [(x[1][0] : pttm | "bottom" | false), x[1][1]]]);
+    debug("function PFCONSOLE, with ")
     return pfconstructor(interaction(ioe, tctx), ioe.e, [[ctx, newty]])[0];
 }
 
@@ -164,7 +165,9 @@ const CONSOLE = (ioe : stdIO) : typeof undefined => {
     let AllTactics : TContext = [];
     let ProofScript : string = "";
     while(true){
+        
         const input : INSTRUCTION = ioe.iI("");
+        debug(input + " function CONSOLE");
         if(input.type === "terminate"){
             break;
         } else if(input.type === "addDef") {

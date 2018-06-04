@@ -1,8 +1,11 @@
 import {CONSOLE, defaultprintDef, defaultprintScript} from "./console.ITP3"
 import {parseToTTact, parseToInstrGen} from "./parser.ITP3"
+import {debug} from "../globalDef"
 
 const Fiber = require('fibers');
 const repl = require('repl');
+
+
 
 const stdoutput = (str) => (process.stdout.write(str), str)
 const stderr = (str) => (process.stderr.write(str), str)
@@ -25,8 +28,11 @@ const consoleCo =
 consoleCo.run(""); // Initialization.
 
 function delegateConsole(cmd, context, filename, callback){
+    debug("newcmd");
     consoleCo.run(cmd);
+
     callback(null, cmd);
 }
 
-const replServer = repl.start({ prompt: '> ', eval: myEval });
+const replServer = repl.start({ prompt: '> ', eval: delegateConsole });
+
