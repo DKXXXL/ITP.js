@@ -12,6 +12,7 @@
     "build": "babel src -d lib"
   },
   "dependencies": {
-    "npm": "^6.1.0"
+    "npm": "^6.1.0",
+    "parsimmon": "^1.7.3"
   }
 }
