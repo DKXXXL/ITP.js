@@ -167,7 +167,7 @@ const CONSOLE = (ioe : stdIO) : typeof undefined => {
     while(true){
         
         const input : INSTRUCTION = ioe.iI("");
-        debug(input + " function CONSOLE");
+        // debug(input + " function CONSOLE");
         if(input.type === "terminate"){
             break;
         } else if(input.type === "addDef") {

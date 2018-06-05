@@ -1,6 +1,6 @@
 //@flow
 
-const debug = (s) => console.log(s + "\n");
+const debug = (s : string) => console.log(s + "\n");
 
 export type ID = string;
 export type UDEF = typeof undefined;
@@ -90,7 +90,10 @@ const endswith = <X>(x : X, gen : Generator<X>): (() => X) => {
     };
 }
 
-
+const printf = (proto : string, ...xs:Array<string>):string => {
+        xs.map((x, index) => {proto = proto.replace("{" + String(index) + "}", x)}); 
+        return proto;
+        }
 
 
 export type Dict<K, V> = Array<[K, V]>;
@@ -128,7 +131,7 @@ const pprintDict = <K,V>(pk : K => string, pv : V => string) :( Dict<K,V> => str
 
 
 
-module.exports = {ideq, ppID, obeq, toID, debug,
+module.exports = {ideq, ppID, obeq, toID, debug, printf,
                     concat, concat_, joinGen, mapGen, toArrayFillBlankWith, endswith, listGen, 
                     _add_to_dict, _find_in_dict, _reverse_mapping, pprintDict};
 
