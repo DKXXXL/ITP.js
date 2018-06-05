@@ -53,28 +53,28 @@ const langCommand = ParserC.createLanguage(
         Cmd : (r) => ParserC.alt(r.intro, r.apply, r.check, r.conv, r.letTerm, r.idtac),
         intro : () => ParserC.string("intro").result({type : "intro"}),
         apply : () => ParserC.seqMap(
-                optWS.then(ParserC.string("apply")).skip(optWS),
-                langTerm.Value.wrap(optWS, optWS).wrap(ParserC.string("["), ParserC.string("]")).wrap(optWS, optWS).times(2),
+                (ParserC.string("apply")),
+                langTerm.Value.wrap(optWS, optWS).wrap(ParserC.string("["), ParserC.string("]")).wrap(optWS, ParserC.string("")).times(2),
                 (icon, xs) => ({type : "apply", caller : xs[0], callee : xs[1]})
             ),
         check : () => ParserC.seqMap(
-                optWS.then(ParserC.string("check")).skip(optWS),
-                langTerm.Value.wrap(optWS, optWS).wrap(ParserC.string("["), ParserC.string("]")).wrap(optWS, optWS).times(1),
+                (ParserC.string("check")),
+                langTerm.Value.wrap(optWS, optWS).wrap(ParserC.string("["), ParserC.string("]")).wrap(optWS, ParserC.string("")).times(1),
                 (icon, xs) => ({type : "check", term : xs[0]})
             ),
         conv : () => ParserC.seqMap(
-                optWS.then(ParserC.string("conv")).skip(optWS),
-                langTerm.Value.wrap(optWS, optWS).wrap(ParserC.string("["), ParserC.string("]")).wrap(optWS, optWS).times(1),
+                (ParserC.string("conv")),
+                langTerm.Value.wrap(optWS, optWS).wrap(ParserC.string("["), ParserC.string("]")).wrap(optWS, ParserC.string("")).times(1),
                 (icon, xs) =>( {type : "conv", term : xs[0]})
             ),        
         letTerm : () => ParserC.seqMap(
-                optWS.then(ParserC.string("let")).skip(WS),
+                (ParserC.string("let")).skip(WS),
                 langTerm.Variable.wrap(optWS, WS).skip(ParserC.string(":=").skip(optWS)),
-                langTerm.Value.wrap(optWS, optWS).wrap(ParserC.string("["), ParserC.string("]")).wrap(optWS, optWS).times(1),
+                langTerm.Value.wrap(optWS, optWS).wrap(ParserC.string("["), ParserC.string("]")).wrap(optWS, ParserC.string("")).times(1),
                 (icon, vname, vbinding) => ({type : "let", bind : toID(vname), term : vbinding[0]})
 
         ),
-        idtac : () => ParserC.string("idtac").wrap(optWS, optWS).result({type: "idtac"})
+        idtac : () => ParserC.string("idtac").result({type: "idtac"})
     }
 );
 
@@ -88,8 +88,8 @@ const langTactic = ParserC.createLanguage(
                             .map(xs => (foldToSeq(xs))),
         lettac : (r) => ParserC.seqMap(
             optWS.then(ParserC.string("lettac")).then(r.metavar.wrap(WS, optWS)).skip(ParserC.string(":=").wrap(optWS, optWS)),
-            r.tacs.skip(ParserC.string("in").wrap(WS,WS)),
-            r.tacs,
+            r.tacs.wrap(ParserC.string("[").wrap(optWS, optWS), ParserC.string("]").wrap(optWS, optWS)).skip(ParserC.string("in").wrap(optWS,WS)),
+            r.tacs.wrap(optWS, optWS),
             (bind, binding, body) => ({type : "let", name : bind.n, bind : binding, body : body})
         ),
         metavar : () => ParserC.seqMap( 
