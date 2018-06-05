@@ -39,20 +39,20 @@ const tacP = (x) => langTTactic.all.tryParse(x);
 const sanityCheckOfTactic = [
     () => jsc.property("intro", () => tacP("intro.")[0][1].t.type === "intro"),
     () => jsc.property("apply", () => tacP("apply [forall x:**, x] [*].")[0][1].t.type === "apply"),
-    () => jsc.property("check", () => tacP("check [forall x:*, x].")[0][1].t.type === "check")
+    () => jsc.property("check", () => tacP("check [forall x:*, x].")[0][1].t.type === "check"),
     // () => jsc.property("conv", () => tacP("conv [forall x:*, x]").t.type === "conv"),
     // () => jsc.property("let - define term", () => tacP("let 1 := [forall x:*, x]").t.type === "let"),
     // () => jsc.property("idtac", () => tacP(" idtac ").t.type === "idtac"),
-    ,() => jsc.property("seq", () => tacP(" [idtac;idtac].")[0][1].t.type === "seq"),
+    () => jsc.property("seq", () => ((x) => tacP(" [idtac ; idtac].")[0][1].type === "seq")),
     // () => jsc.property("let tac", () => tacP("lettac x := idtac in x").type === "let"),
-    // () =>jsc.property("metavar", () => tacP("x1").type === "metavar")
+    () =>jsc.property("metavar", () => tacP("a.")[0][1].type === "metavar"),
 ]
 
 const instrPgen = langInstructionGen(x => undefined, x => undefined);
 const instrP = (x) => instrPgen.all.tryParse(x);
 const sanityCheckofInstr = [
-    () => jsc.property("addDef", () => instrP("addDef 1 **.").type === "addDef"),
-    () => jsc.property("addTactic", () => instrP("addTactic a [idtac;a].").type === "addTactic"),
+    () => jsc.property("addDef", () => instrP("addDef 1:**.").type === "addDef"),
+    () => jsc.property("addTactic", () => instrP("addTactic a := a.").type === "addTactic"),
     () => jsc.property("printScript", () => instrP("printScript.").type === "printScript")
 ]
 

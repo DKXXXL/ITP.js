@@ -12,7 +12,8 @@
   "scripts": {
     "flow": "flow",
     "test": "mocha --compilers js:babel-core/register",
-    "build": "babel src -d lib"
+    "build": "babel src -d lib",
+    "buildtest" : "babel src -d lib && mocha --compilers js:babel-core/register"
   },
   "dependencies": {
     "babel-polyfill": "^6.26.0",
