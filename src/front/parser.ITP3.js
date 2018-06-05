@@ -5,9 +5,10 @@ const optWS = ParserC.optWhitespace;
 const WS = ParserC.whitespace;
 
 const foldToApp = (xs) => xs.reduce(((f, x) => ({type : "apply", fun : f, arg: x})));
+const foldToSeq = (xs) => xs.reduce(((f, x) => ({type : "seq", t0 : f, t1: x})));
 
 const numberChar = "1234567890";
-const NumberParser = ParserC.regex(/[0-9]+/);
+const NumberParser = ParserC.regexp(/[0-9]+/);
 const smallabt = "qwertyuiopasdfghjklzxcvbnm";
 const abt = smallabt + smallabt.toUpperCase();
 const symbolChar = "!@#$%^&-_+=";
@@ -25,14 +26,14 @@ const langTerm = ParserC.createLanguage(
                 ParserC.string("\\\\").then(optWS).then(r.Variable).skip(optWS).skip(ParserC.string(":")),
                 optWS.then(r.Value).skip(optWS).skip(ParserC.string(",")),
                 optWS.then(r.Value),
-                (metaid, declty, body) => ({type: "lambda", bind : toID(metaid), iT : declty, body : body})
+                (metaid, declty, body) => ({type: "lambda", bind : metaid.n, iT : declty, body : body})
             ),
         Pi : (r) => 
             ParserC.seqMap(
-                ParserC.string("forall").then(optWS).then(r.Variable).skip(optWS).skip(ParserC.string(":")),
+                ParserC.string("forall").then(WS).then(r.Variable).skip(optWS).skip(ParserC.string(":")),
                 optWS.then(r.Value).skip(optWS).skip(ParserC.string(",")),
                 optWS.then(r.Value),
-                (metaid, declty, body) =>( {type: "pi", bind : toID(metaid), iT : declty, body : body})
+                (metaid, declty, body) =>( {type: "pi", bind : metaid.n, iT : declty, body : body})
             ),
         App : (r) => r.Value.sepBy1(WS).wrap(optWS, optWS).wrap(ParserC.string("("), ParserC.string(")")).map(
                                         xs => {
@@ -73,19 +74,19 @@ const langCommand = ParserC.createLanguage(
                 (icon, vname, vbinding) => ({type : "let", bind : toID(vname), term : vbinding[0]})
 
         ),
-        idtac : () => ParserC.string("idtac").result({type: "idtac"})
+        idtac : () => ParserC.string("idtac").wrap(optWS, optWS).result({type: "idtac"})
     }
 );
 
 const langTactic = ParserC.createLanguage(
     {
-        tacs: (r) => ParserC.alt(r.cmds, r.seq, r.lettac, r.metavar),
-        cmds : () => langCommand.Cmd.map(x =>( {type : "cmds", t : x})),
-        seq : (r) => ParserC.seqMap(
-                r.tacs.wrap(optWS, optWS).skip(ParserC.string(";")),  
-                r.tacs.wrap(optWS, optWS),
-                (pre, post) => ({type : "seq", t0 : pre, t1 : post})
-        ),
+        tacs: (r) => ParserC.alt(r.seq,r.cmds, r.lettac, r.metavar),
+        cmds : () => langCommand.Cmd.wrap(optWS, optWS).map(x =>( {type : "cmds", t : x})),
+        seq : (r) => r.tacs.sepBy1(ParserC.string(";").wrap(optWS, optWS))
+                            .wrap(ParserC.string("["), ParserC.string("]"))
+                            .wrap(optWS, optWS)
+                            .map(x => x + [{type : "cmds", t : {type : "idtac"}}])
+                            .map(xs => foldToSeq(xs)),
         lettac : (r) => ParserC.seqMap(
             optWS.then(ParserC.string("lettac")).then(r.metavar.wrap(WS, optWS)).skip(ParserC.string(":=").wrap(optWS, optWS)),
             r.tacs.skip(ParserC.string("in").wrap(WS,WS)),
@@ -102,17 +103,20 @@ const langTactic = ParserC.createLanguage(
 
 
 const langTTactic = ParserC.createLanguage({
-        all : (r) => ParserC.alt(r.ttactic, langTactic.tacs.map(x => [[0, x]])),
+        all : (r) => ParserC.alt(r.ttactic,
+                                 langTactic.tacs.map(x => [[0, x]]))
+                                 .skip(ParserC.string(".").wrap(optWS, optWS)),
         ttactic: () => 
                 ParserC.seqMap(
                     NumberParser.wrap(optWS, optWS).skip(ParserC.string(":")),
-                    langTactic.tac.wrap(optWS, optWS),
+                    langTactic.tacs.wrap(optWS, optWS),
                     (target, tactic) => [Number(target), tactic]
-                ).sepBy1(ParserC.string(",")).wrap(ParserC.string("["), ParserC.string(")"))
+                ).sepBy1(ParserC.string("|")).wrap(ParserC.string("["), ParserC.string(")"))
 })
 
 const langInstructionGen = (defaultprintDef, defaultprintScript) => ParserC.createLanguage({
-    all: (r) => ParserC.alt(r.addDef, r.addTactic, r.printScript, r.printDef, r.printTacs, r.terminate),
+    all: (r) => ParserC.alt(r.addDef, r.addTactic, r.printScript, r.printDef, r.printTacs, r.terminate)
+                        .skip(ParserC.string(".").wrap(optWS, optWS)),
     addDef : () => ParserC.seqMap(
                 optWS.skip(ParserC.string("addDef")).then(langTerm.Variable.wrap(WS,WS)),
                 langTerm.Value.wrap(optWS, optWS),
