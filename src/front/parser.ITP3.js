@@ -156,10 +156,11 @@ const parseToInstrGen = (pdef, pscript) => {
                 ret = langInstr.all.tryParse(src());
             } catch(err) {
                 debug("Parsing Instruction failed");
+                debug(JSON.stringify(err));
                 continue;
             }
             debug("Parsing Instruction Success");
-            debug(JSON.stringify(err));
+            
             return ret;
         }
     }

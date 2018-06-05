@@ -17,7 +17,7 @@ export type Option<T> = T | typeof undefined;
 
 // Array -> Generator
 const listGen= <X>(l : Array<X>) : Generator<X> => {
-    let index = 0;
+    let index = -1;
     return () => {
         index = index + 1;
         return l[index];

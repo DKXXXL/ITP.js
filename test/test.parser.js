@@ -12,6 +12,7 @@ const WS = (n) => " ".repeat(n)
 
 const STAR = {type : "U0"};
 
+const VAR = (s) =>({type : "var", n: s});
 
 const termP = (x) => langTerm.Value.tryParse(x);
 const sanityCheckOfTerm = [
@@ -19,19 +20,22 @@ const sanityCheckOfTerm = [
     () => jsc.property("term - U0", "nat", "nat", (n, m) => _.isEqual(termP(addSpace(n, m, "*")), STAR)),
     () => jsc.property("term - Lambda", "nat", "nat", (n, m, j) => _.isEqual(termP(printf("\\\\x:*,*")), 
                                                                              {type: "lambda", bind : "x", iT : STAR, body : STAR})),
-    () => jsc.property("term - Pi", () => termP("forall x:*, x").type === "pi"),
-    () => jsc.property("term - App", () => termP("(A B)").type === "apply"),
-    () => jsc.property("term - var", () => termP("1").type === "var") // surprise!
+    () => jsc.property("term - Pi", () => _.isEqual(termP("forall x:*, *"), {type : "pi", bind : "x", iT : STAR, body : STAR})),
+    () => jsc.property("term - App", () => _.isEqual(termP("(A B)"),
+                                                            {type : "apply", fun : VAR("A"), arg : VAR("B")})),
+    () => jsc.property("term - var", () => _.isEqual(termP("1"), VAR("1"))) // surprise!
                                                                         
 ]
 
 const cmdP  = (x) => langCommand.Cmd.tryParse(x);
+
+
 const sanityCheckOfCommand = [
-    () => jsc.property("intro", () => cmdP("intro").type === "intro"),
-    () => jsc.property("apply", () => cmdP("apply [forall x:**, x] [*]").type === "apply"),
-    () => jsc.property("check", () => cmdP("check [forall x:*, x]").type === "check"),
-    () => jsc.property("conv", () => cmdP("conv [forall x:*, x]").type === "conv"),
-    () => jsc.property("let - define term", () => cmdP("let 1 := [forall x:*, x]").type === "let"),
+    () => jsc.property("intro", () => _.isEqual(cmdP("intro"), {type: "intro"})),
+    () => jsc.property("apply", () => _.isEqual(cmdP("apply [forall x:**, x] [*]"), {type:"apply", caller: {type : "pi", bind : "x", iT : {type : "U1"}, body : VAR("x")}, callee : STAR})),
+    () => jsc.property("check", () => _.isEqual(cmdP("check [x]"), {type : "check", term : VAR("x")})),
+    () => jsc.property("conv", () => _.isEqual(cmdP("conv [x]"), {type : "conv", term : VAR("x")})),
+    () => jsc.property("let - define term", () => _.isEqual(cmdP("let 1 := [x]"), {type : "let", bind : "1", term : VAR("x")})),
     () => jsc.property("idtac", () => cmdP("idtac").type === "idtac")
 ]
 
@@ -51,7 +55,7 @@ const sanityCheckOfTactic = [
 const instrPgen = langInstructionGen(x => undefined, x => undefined);
 const instrP = (x) => instrPgen.all.tryParse(x);
 const sanityCheckofInstr = [
-    () => jsc.property("addDef", () => instrP("addDef 1:**.").type === "addDef"),
+    () => jsc.property("addDef", () => _.isEqual(instrP("addDef 1:**."),{type : "addDef", name : ("1"), ty : {type : "U1"}})),
     () => jsc.property("addTactic", () => instrP("addTactic a := a.").type === "addTactic"),
     () => jsc.property("printScript", () => instrP("printScript.").type === "printScript"),
      () => jsc.property("printDef", () => instrP("printDef.").type === "printDef"),

@@ -129,6 +129,9 @@ const newtermChecker = (ctx : DefinitionList, newbind: ID, newterm : pttm, decTy
 
 // Check the whole proof is correct
 const pfChecker = (ctx : DefinitionList) : boolean => {
+    if(ctx.length == 0) {
+        return true;
+    }
     const oldlist = ctx.slice(0, ctx.length - 1);
     return pfChecker(oldlist) && 
             newtermChecker(oldlist, ctx[ctx.length-1][0], ctx[ctx.length-1][1][0], ctx[ctx.length-1][1][1]);

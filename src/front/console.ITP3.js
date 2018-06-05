@@ -140,8 +140,10 @@ const interaction = (ioe : stdIO, tctx : TContext) : (PartialGoals => Commands) 
 }
 const PFCONSOLE = (ioe : stdIO, tctx : TContext, dctx : DefinitionList, newty : pttm) : pttm => {
     const ctx : Context = dctx.map(x => [x[0], [(x[1][0] : pttm | "bottom" | false), x[1][1]]]);
-    debug("function PFCONSOLE, with ")
-    return pfconstructor(interaction(ioe, tctx), ioe.e, [[ctx, newty]])[0];
+    debug("function PFCONSOLE, with pfconstructor, proof mode.")
+    const term = pfconstructor(interaction(ioe, tctx), ioe.e, [[ctx, newty]])[0];
+    debug("function PFCONSOLE return, back to normal mode.")
+    return term;
 }
 
 
