@@ -18,8 +18,8 @@ const symbolChar = "!@#$%^&-_+=";
 const langTerm = ParserC.createLanguage(
     {
         Value : (self) => ParserC.alt(self. U1, self. U0, self.Lambda, self.Pi, self.App, self.Variable),
-        U1 : () => ParserC.string("**").result({type: "U1"}),
-        U0 : () => ParserC.string("*").result({type: "U0"}),
+        U1 : () => ParserC.string("**").wrap(optWS, optWS).result({type: "U1"}),
+        U0 : () => ParserC.string("*").wrap(optWS, optWS).result({type: "U0"}),
         Lambda : (r) => 
             ParserC.seqMap(
                 ParserC.string("\\\\").then(optWS).then(r.Variable).skip(optWS).skip(ParserC.string(":")),
@@ -164,7 +164,8 @@ const parseToInstrGen = (pdef, pscript) => {
 
 module.exports = {
     parseToTTact,
-    parseToInstrGen
+    parseToInstrGen,
+    langTerm, langCommand, langTactic, langTTactic, langInstructionGen
 };
 
 
