@@ -71,7 +71,7 @@ const langCommand = ParserC.createLanguage(
                 (ParserC.string("let")).skip(WS),
                 langTerm.Variable.wrap(optWS, WS).skip(ParserC.string(":=").skip(optWS)),
                 langTerm.Value.wrap(optWS, optWS).wrap(ParserC.string("["), ParserC.string("]")).wrap(optWS, ParserC.string("")).times(1),
-                (icon, vname, vbinding) => ({type : "let", bind : toID(vname), term : vbinding[0]})
+                (icon, vname, vbinding) => ({type : "let", bind : vname.n, term : vbinding[0]})
 
         ),
         idtac : () => ParserC.string("idtac").result({type: "idtac"})
