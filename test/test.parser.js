@@ -53,7 +53,12 @@ const instrP = (x) => instrPgen.all.tryParse(x);
 const sanityCheckofInstr = [
     () => jsc.property("addDef", () => instrP("addDef 1:**.").type === "addDef"),
     () => jsc.property("addTactic", () => instrP("addTactic a := a.").type === "addTactic"),
-    () => jsc.property("printScript", () => instrP("printScript.").type === "printScript")
+    () => jsc.property("printScript", () => instrP("printScript.").type === "printScript"),
+     () => jsc.property("printDef", () => instrP("printDef.").type === "printDef"),
+     () => jsc.property("printTacs", () => instrP("printTacs.").type === "printTacs"),
+    () => jsc.property("terminate", () => instrP("terminate.").type === "terminate"),
+     
+
 ]
 
 describe(
