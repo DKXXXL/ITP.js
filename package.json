@@ -6,22 +6,23 @@
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-flow": "^6.23.0",
     "babel-preset-stage-2": "^6.24.1",
+    "coveralls": "^3.0.1",
     "fibers": "^2.0.2",
     "flow-bin": "^0.73.0",
-    "istanbul": "~0.2.4",
-    "coveralls": "~2.7.1"
+    "mocha-lcov-reporter": "^1.3.0"
   },
   "scripts": {
     "flow": "flow",
     "test": "flow && babel src -d lib && mocha --compilers js:babel-core/register",
     "build": "babel src -d lib",
-    "buildtest" : "babel src -d lib && mocha --compilers js:babel-core/register",
+    "buildtest": "babel src -d lib && mocha --compilers js:babel-core/register",
     "compile": "babel src -d lib",
     "test-travis2": "npm run compile && mocha --compilers js:babel-core/register",
     "cover": "istanbul cover node_modules/mocha/bin/_mocha -- --compilers js:babel-core/register --colors --reporter dot test/"
-    },
+  },
   "dependencies": {
     "babel-polyfill": "^6.26.0",
+    "istanbul": "^0.4.5",
     "jsverify": "^0.8.3",
     "mocha": "^5.2.0",
     "npm": "^6.1.0",
