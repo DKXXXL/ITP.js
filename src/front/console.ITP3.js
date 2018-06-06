@@ -116,7 +116,7 @@ const inputAsGen = (i : Input<TTactic>) : Generator<TTactic> => (x => i(""));
 const ppPGs = (pg : PartialGoals) : string => 
     pg.map((x,index) => {
                 if(typeof x !== 'boolean'){
-                    return index.toString() + "] " + ppCtx(x[0]) + " |- " + ppPttm(x[1]);
+                    return index.toString() + "] " + ppCtx(x[0]) + "\n ?- " + ppPttm(x[1]);
                 } 
                 return "";})
         .filter(x => x !== "")
@@ -178,7 +178,9 @@ const CONSOLE = (ioe : stdIO) : typeof undefined => {
             break;
         } else if(input.type === "addDef") {
             // Into Proof Mode
+            ioe.o("Enter Proof Mode.");
             const tm = PFCONSOLE(ioe, AllTactics, AllDefinitions, input.ty);
+            ioe.o("Back to Instruction Mode.");
             if(!newtermChecker(AllDefinitions, input.name, tm, input.ty)) {ioe.e("Define Failed."); continue;}
             AllDefinitions.push([input.name, [tm, input.ty]]);
         } else if(input.type === "addAxiom"){

@@ -1,6 +1,7 @@
 //@flow
 
-const debug = (s : string) => console.log(s + "\n");
+const debug = (s : string) => undefined // console.log(s + "\n");
+const warn = (s: string) => process.stderr.write(s);
 
 export type ID = string;
 export type UDEF = typeof undefined;
@@ -129,7 +130,7 @@ const pprintDict = <K,V>(pk : K => string, pv : V => string) :( Dict<K,V> => str
 
 
 
-module.exports = {ideq, ppID, obeq, toID, debug, printf,
+module.exports = {ideq, ppID, obeq, toID, debug, printf, warn,
                     concat, concat_, joinGen, mapGen, toArrayFillBlankWith, endswith, listGen, 
                     _add_to_dict, _find_in_dict, _reverse_mapping, pprintDict};
 

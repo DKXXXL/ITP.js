@@ -1,4 +1,4 @@
-import {toID, debug} from "../globalDef"
+import {toID, debug, warn} from "../globalDef"
 const ParserC = require("parsimmon");
 
 const optWS = ParserC.optWhitespace;
@@ -144,8 +144,8 @@ const parseToTTact = (src) => {
                 
                 ret = langTTactic.all.tryParse(src());
             } catch(err) {
-                debug("Parsing TTactic failed");
-                debug(JSON.stringify(err));
+                warn("Parsing TTactic failed");
+                warn(JSON.stringify(err));
                 continue;
             }
             debug("Parsing TTactic success");
@@ -160,8 +160,8 @@ const parseToInstrGen = (pdef, pscript) => {
             try{
                 ret = langInstr.all.tryParse(src());
             } catch(err) {
-                debug("Parsing Instruction failed");
-                debug(JSON.stringify(err));
+                warn("Parsing Instruction failed");
+                warn(JSON.stringify(err));
                 continue;
             }
             debug("Parsing Instruction Success");
