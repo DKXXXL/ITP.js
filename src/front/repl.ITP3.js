@@ -5,7 +5,7 @@ import {debug} from "../globalDef"
 const Fiber = require('fibers');
 const repl = require('repl');
 
-
+let INPUTSCRIPT = "";
 
 const stdoutput = (str) => (process.stdout.write(str + "\n"), str)
 const stderr = (str) => (process.stderr.write(str + "\n"), str)
@@ -15,13 +15,22 @@ const printScriptToIO = defaultprintScript(stdoutput);
 
 let parseToInstr = parseToInstrGen(printDefToIO, printScriptToIO);
 
+const scriptGet = () => INPUTSCRIPT;
+
+const fiberY = () => {
+    const ret = Fiber.yield();
+    INPUTSCRIPT = INPUTSCRIPT + ret;
+    return ret;
+}
+
 const consoleCo = 
     Fiber((s) => CONSOLE(
         {
-            i : (pg) => (stdoutput(pg), parseToTTact(() => Fiber.yield())),
-            iI :(pg) => (stdoutput(pg), parseToInstr(() => Fiber.yield())),
+            i : (pg) => (stdoutput(pg), parseToTTact(fiberY)),
+            iI :(pg) => (stdoutput(pg), parseToInstr(fiberY)),
             o : stdoutput,
-            e : stderr
+            e : stderr,
+            scripts : scriptGet,
         }
     ));
 

@@ -105,7 +105,7 @@ const prettyprintTacCtx = pprintDict((x:ID) => x.toString(), pprintTac);
 
 
 
-type stdIO = {i : Input<TTactic>, iI : Input<INSTRUCTION>, o : Output, e : Error};
+type stdIO = {i : Input<TTactic>, iI : Input<INSTRUCTION>, o : Output, e : Error, scripts : () => string};
 
 type Input<K> = string => K;
 type Output = string => string;
@@ -168,7 +168,7 @@ const defaultprintScript = (o : string => typeof undefined) : (string => typeof 
 const CONSOLE = (ioe : stdIO) : typeof undefined => {
     let AllDefinitions : DefinitionList = [];
     let AllTactics : TContext = [];
-    let ProofScript : string = "";
+    
     while(true){
         
         const input : INSTRUCTION = ioe.iI("");
@@ -188,7 +188,7 @@ const CONSOLE = (ioe : stdIO) : typeof undefined => {
         } else if(input.type === "addTactic") {
             AllTactics.push([input.name, input.tac]);
         } else if(input.type === "printScript") {
-            input.outMethod(ProofScript);
+            input.outMethod(ioe.scripts());
         } else if(input.type === "printDef") {
             if(!pfChecker(AllDefinitions)) {ioe.e("Unexpected Internal Error. Cannot output definition."); continue;}
             input.outMethod(AllDefinitions);

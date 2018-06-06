@@ -125,7 +125,7 @@ const toArrayFillBlankWith = <X>(d : Dict<number, X>, maxItemNumber : number, x 
 
 
 const pprintDict = <K,V>(pk : K => string, pv : V => string) :( Dict<K,V> => string) => 
-    d => d.map((kv) => pk(kv[0]) + " : " + pv(kv[1])).join(",")
+    d => d.map((kv) => pk(kv[0]) + " : " + pv(kv[1])).join(",\n")
 
 
 
