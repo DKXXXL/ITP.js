@@ -121,6 +121,11 @@ const langInstructionGen = (defaultprintDef, defaultprintScript) => ParserC.crea
                 langTerm.Value.wrap(optWS, optWS),
                 (name, binding) => ({type : "addDef", name : name.n, ty : binding})
             ),
+    addAxiom : () => ParserC.seqMap(
+                optWS.skip(ParserC.string("addAxiom").wrap(optWS, WS)).then(langTerm.Variable.wrap(optWS,optWS)).skip(ParserC.string(":").wrap(optWS, optWS)),
+                langTerm.Value.wrap(optWS, optWS),
+                (name, binding) => ({type : "addAxiom", name : name.n, ty : binding})
+            ),
     addTactic : () => ParserC.seqMap(
                 optWS.skip(ParserC.string("addTactic").wrap(optWS, WS)).then(langTactic.metavar.wrap(optWS,optWS)).skip(ParserC.string(":=").wrap(optWS, optWS)),
                 langTactic.tacs.wrap(optWS, optWS),

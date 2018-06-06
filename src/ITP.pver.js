@@ -62,7 +62,7 @@ type NewContext = Context;
 export type NewJudgement = pttm;
 export type Commands = Array<Command>;
 type ArrayF<Domain, Codomain> = [number, Array<Domain> => Array<Codomain>]; // size of doman * function
-export type DefinitionList = Dict<ID, [pttm, pttm]>;
+export type DefinitionList = Dict<ID, [pttm | "bottom", pttm]>;
 const ppDefL : DefinitionList => string = pprintDict(ppID, x => " := " + ppPttm(x[0]) + " : " + ppPttm(x[1]));
 
 // homomorphism
@@ -118,12 +118,17 @@ const untyped_delta_conv_all = (ctx : Context, tm : pttm) : pttm => {
 
 const untyped_beta_delta_conv_all = (ctx : Context, tm : pttm) : pttm => untyped_beta_conv(untyped_delta_conv_all(ctx, tm));
 
-
+// Yes. casting. I hate it. But flow is too silly.
+const defListToCtx = (defl : DefinitionList) : Context => ((defl: any) : Context)
 
 // prerequisite : ctx is consistent
-const newtermChecker = (ctx : DefinitionList, newbind: ID, newterm : pttm, decType : pttm) : boolean => {
+const newtermChecker = (ctx : DefinitionList, newbind: ID, newterm : pttm | "bottom", decType : pttm) : boolean => {
+    const type_ctx = ctx.map(x => [x[0], x[1][1]]);
+    const tyOfdecType = has_type(type_ctx, untyped_delta_conv_all(defListToCtx(ctx), decType));
+    if((!obeq(tyOfdecType, TYPE_SQUARE)) && (!obeq(tyOfdecType, TYPE_STAR)) && (!obeq(decType, TYPE_SQUARE))) {return false;}
+    if(newterm === "bottom") {return true;}
     if(_find_in_dict(x => x === newbind, ctx) !== undefined) {return false;}
-    if(!obeq(has_type(ctx.map(x => [x[0], x[1][1]]), newterm),decType)) {return false;}
+    if(!obeq(has_type(type_ctx, newterm),decType)) {return false;}
     return true;
 }
 
@@ -269,6 +274,7 @@ const ppfconstructor = (ncmd : (PartialGoals) => Commands, warn: string => typeo
 
 
 module.exports = {
+    defListToCtx,
     pfconstructor,
     newtermChecker,
     pfChecker,

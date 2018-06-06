@@ -10,7 +10,7 @@ import {debug, ideq, ppID, concat, concat_, joinGen, mapGen, toArrayFillBlankWit
 import type {pttm} from "../ITP2" 
 import {pprintDict, ppPttm, _add_to_dict,_find_in_dict} from "../ITP2"
 import type {DefinitionList, Commands, Command, NewJudgement, Goal, Goals, PartialGoals, Context} from "../ITP.pver"
-import {pfconstructor,newtermChecker,pfChecker, ppCmd, ppCtx, ppDefL} from "../ITP.pver"
+import {pfconstructor,newtermChecker,pfChecker, ppCmd, ppCtx, ppDefL, defListToCtx} from "../ITP.pver"
 
 
 type Actic = PartialGoals => Commands;
@@ -139,7 +139,9 @@ const interaction = (ioe : stdIO, tctx : TContext) : (PartialGoals => Commands) 
     }
 }
 const PFCONSOLE = (ioe : stdIO, tctx : TContext, dctx : DefinitionList, newty : pttm) : pttm => {
-    const ctx : Context = dctx.map(x => [x[0], [(x[1][0] : pttm | "bottom" | false), x[1][1]]]);
+    // here it's too stupid
+    // const ctx : Context = dctx.map(x => [x[0], [(x[1][0] : pttm | "bottom" | false), x[1][1]]]);
+    const ctx : Context = defListToCtx(dctx);
     debug("function PFCONSOLE, with pfconstructor, proof mode.")
     const term = pfconstructor(interaction(ioe, tctx), ioe.e, [[ctx, newty]])[0];
     debug("function PFCONSOLE return, back to normal mode.")
@@ -152,6 +154,7 @@ const PFCONSOLE = (ioe : stdIO, tctx : TContext, dctx : DefinitionList, newty : 
 
 type INSTRUCTION = 
     {type : "addDef", name : ID, ty : pttm}
+    | {type : "addAxiom", name : ID, ty : pttm}
     | {type : "addTactic", name : ID, tac : Tactic}
     | {type : "printScript", outMethod : string => typeof undefined}
     | {type : "printDef", outMethod : DefinitionList => typeof undefined}
@@ -169,12 +172,17 @@ const CONSOLE = (ioe : stdIO) : typeof undefined => {
     while(true){
         
         const input : INSTRUCTION = ioe.iI("");
+        
         // debug(input + " function CONSOLE");
         if(input.type === "terminate"){
             break;
         } else if(input.type === "addDef") {
             // Into Proof Mode
             const tm = PFCONSOLE(ioe, AllTactics, AllDefinitions, input.ty);
+            if(!newtermChecker(AllDefinitions, input.name, tm, input.ty)) {ioe.e("Define Failed."); continue;}
+            AllDefinitions.push([input.name, [tm, input.ty]]);
+        } else if(input.type === "addAxiom"){
+            const tm = "bottom";
             if(!newtermChecker(AllDefinitions, input.name, tm, input.ty)) {ioe.e("Define Failed."); continue;}
             AllDefinitions.push([input.name, [tm, input.ty]]);
         } else if(input.type === "addTactic") {
