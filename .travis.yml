@@ -1,6 +1,6 @@
 language: node_js
 node_js:
   - "node"
-script: "npm run-script test-travis2 && npm run-script cover"
+script: "npm run-script buildtest"
 # Send coverage data to Coveralls
 after_script: "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
