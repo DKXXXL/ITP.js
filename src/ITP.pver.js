@@ -175,7 +175,7 @@ const goaltransform = (ncmd : (PartialGoals) => Commands,warn: string => typeof 
     } else if (cmd.type === "check") {
         const claimed_term = cmd.term;
         const claimed_term_ty = has_type(ctx_list, claimed_term);
-        if(claimed_term_ty !== goal_ty) {warn("Check failed. Type Inconsistent."); return [[goal], donothing];}
+        if(!obeq(claimed_term_ty,goal_ty)) {warn("Check failed. Type Inconsistent."); return [[goal], donothing];}
         return [[true], [1, x => [claimed_term]]];
     } else if (cmd.type === "conv") {
         const claimed_ty = cmd.newform;
