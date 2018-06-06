@@ -16,8 +16,10 @@
     "test": "flow && babel src -d lib && mocha --compilers js:babel-core/register",
     "build": "babel src -d lib",
     "buildtest" : "babel src -d lib && mocha --compilers js:babel-core/register",
-    "test-travis": "babel src -d lib && ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha  -- -R spec ./test/* --compilers js:babel-core/register"
-  },
+    "compile": "babel --presets es2015,stage-0 -d lib/ src/",
+    "test-travis2": "npm run compile && mocha --compilers js:babel-core/register",
+    "cover": "istanbul cover node_modules/mocha/bin/_mocha -- --compilers js:babel-core/register --colors --reporter dot test/"
+    },
   "dependencies": {
     "babel-polyfill": "^6.26.0",
     "jsverify": "^0.8.3",
