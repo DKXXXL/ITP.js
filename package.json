@@ -7,13 +7,16 @@
     "babel-preset-flow": "^6.23.0",
     "babel-preset-stage-2": "^6.24.1",
     "fibers": "^2.0.2",
-    "flow-bin": "^0.41.0"
+    "flow-bin": "^0.41.0",
+    "istanbul": "~0.2.4",
+    "coveralls": "~2.7.1"
   },
   "scripts": {
     "flow": "flow",
     "test": "flow && babel src -d lib && mocha --compilers js:babel-core/register",
     "build": "babel src -d lib",
-    "buildtest" : "babel src -d lib && mocha --compilers js:babel-core/register"
+    "buildtest" : "babel src -d lib && mocha --compilers js:babel-core/register",
+    "test-travis": "./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- -R spec ./test/*"
   },
   "dependencies": {
     "babel-polyfill": "^6.26.0",
