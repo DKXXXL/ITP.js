@@ -16,7 +16,7 @@
     "test": "flow && babel src -d lib && mocha --compilers js:babel-core/register",
     "build": "babel src -d lib",
     "buildtest" : "babel src -d lib && mocha --compilers js:babel-core/register",
-    "compile": "babel --presets es2015,stage-0 -d lib/ src/",
+    "compile": "babel src -d lib",
     "test-travis2": "npm run compile && mocha --compilers js:babel-core/register",
     "cover": "istanbul cover node_modules/mocha/bin/_mocha -- --compilers js:babel-core/register --colors --reporter dot test/"
     },
