@@ -34,7 +34,7 @@ describe(
     "concat_ -",
     () => {
         jsc.property("length combined", "array nat", "array nat", 
-            (arr1, arr2) => genLenth(concat_(listGen(arr1), listGen(arr2))) === arr1.length + arr2.length
+            (arr1, arr2) => genLenth(concat_(listGen(arr1), () => listGen(arr2))) === arr1.length + arr2.length
         )
     }
 )
