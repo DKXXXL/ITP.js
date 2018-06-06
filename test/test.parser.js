@@ -56,6 +56,7 @@ const instrPgen = langInstructionGen(x => undefined, x => undefined);
 const instrP = (x) => instrPgen.all.tryParse(x);
 const sanityCheckofInstr = [
     () => jsc.property("addDef", () => _.isEqual(instrP("addDef 1:**."),{type : "addDef", name : ("1"), ty : {type : "U1"}})),
+    () => jsc.property("addDef", () => _.isEqual(instrP("addAxiom A:*."),{type : "addAxiom", name : ("A"), ty : {type : "U0"}})),
     () => jsc.property("addTactic", () => instrP("addTactic a := a.").type === "addTactic"),
     () => jsc.property("printScript", () => instrP("printScript.").type === "printScript"),
      () => jsc.property("printDef", () => instrP("printDef.").type === "printDef"),

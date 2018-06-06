@@ -114,7 +114,7 @@ const langTTactic = ParserC.createLanguage({
 })
 
 const langInstructionGen = (defaultprintDef, defaultprintScript) => ParserC.createLanguage({
-    all: (r) => ParserC.alt(r.addDef, r.addTactic, r.printScript, r.printDef, r.printTacs, r.terminate)
+    all: (r) => ParserC.alt(r.addDef, r.addAxiom, r.addTactic, r.printScript, r.printDef, r.printTacs, r.terminate)
                         .skip(ParserC.string(".").wrap(optWS, optWS)),
     addDef : () => ParserC.seqMap(
                 optWS.skip(ParserC.string("addDef").wrap(optWS, WS)).then(langTerm.Variable.wrap(optWS,optWS)).skip(ParserC.string(":").wrap(optWS, optWS)),
