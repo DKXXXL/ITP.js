@@ -63,18 +63,16 @@ const concat_ =<X>(f : Generator<X>, g : () => Generator<X>):Generator<X> => {
 const joinGen = <X>(f : Generator<Generator<X>>) : Generator<X> => {
     let current = f();
     return () => {
-        if(current === undefined) {
-            return undefined;
-        }
-        const r = current();
-        if(r === undefined) {
-            current = f();
-            if(current === undefined) {
-            return undefined;
+        let r : Option<X> = undefined;
+        while(current !== undefined) {
+            r = current();
+            if(r === undefined) {
+                current = f();
+            } else {
+                return r;
             }
-        } else {
-            return r;
         }
+        return undefined;
     };
 };
 
@@ -105,7 +103,7 @@ const obeq = (a: ?Object, b:?Object):boolean => (typeof a === typeof b) && (JSON
 //            (input : D | undefined) => {if (D !== undefined) {return f(D);} else {return undefined;} }
 
 const _add_to_dict = <K, V>(newterm : K, newtype : V, ctx: Dict<K,V>) : Dict<K,V> => {let r = ctx.slice(); r.push([newterm, newtype]); return r;}
-const _find_in_dict = <K,V>(pred: K => boolean, ctx : Dict<K,V>) : Option<V> => (x => {if(!x){return x[1];}else{return undefined;}})(ctx.filter(x => pred(x[0]))[0]);
+const _find_in_dict = <K,V>(pred: K => boolean, ctx : Dict<K,V>) : Option<V> => ((x => {if(x !== undefined){return x[1];}else{return undefined;}})(ctx.filter(x => pred(x[0]))[0]));
 const _reverse_mapping = <K, V>(d : Dict<K,V>) : Dict<V,K> => d.map(x => [x[1], x[0]]);
 
 const toArray = <X>(d : Dict<number, X>):Array<X> => {

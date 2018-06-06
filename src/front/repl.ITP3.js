@@ -7,8 +7,8 @@ const repl = require('repl');
 
 
 
-const stdoutput = (str) => (process.stdout.write(str), str)
-const stderr = (str) => (process.stderr.write(str), str)
+const stdoutput = (str) => (process.stdout.write(str + "\n"), str)
+const stderr = (str) => (process.stderr.write(str + "\n"), str)
 
 const printDefToIO = defaultprintDef(stdoutput);
 const printScriptToIO = defaultprintScript(stdoutput);
