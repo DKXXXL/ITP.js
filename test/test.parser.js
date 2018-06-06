@@ -1,8 +1,8 @@
 const jsc = require("jsverify");
 const _ = require("underscore");
 
-import {langTerm, langCommand, langTactic, langTTactic, langInstructionGen} from "../lib/front/parser.ITP3"
-import {printf} from "../lib/globalDef"
+import {langTerm, langCommand, langTactic, langTTactic, langInstructionGen} from "../src/front/parser.ITP3"
+import {printf} from "../src/globalDef"
 
 
 

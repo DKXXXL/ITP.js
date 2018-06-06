@@ -10,7 +10,7 @@ import {    untyped_beta_conversion,
     _find_in_dict,
     _reverse_mapping,
     pprintDict,
-    ppPttm} from "../lib/ITP2"
+    ppPttm} from "../src/ITP2"
 
 const VAR = (s) =>({type : "var", n: s});
 

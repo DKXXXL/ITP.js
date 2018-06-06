@@ -3,7 +3,7 @@ const _ = require("underscore");
 
 import {ideq, ppID, obeq, toID, debug, printf,
                     concat, concat_, joinGen, mapGen, toArrayFillBlankWith, endswith, listGen, 
-                    _add_to_dict, _find_in_dict, _reverse_mapping, pprintDict} from "../lib/globaldef.js"
+                    _add_to_dict, _find_in_dict, _reverse_mapping, pprintDict} from "../src/globaldef.js"
 
 const genLenth = (gen) => {
     let n = 0;
