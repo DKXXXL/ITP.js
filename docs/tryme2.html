@@ -1,12 +1,68 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>ITP.js</title>
+<title>Try ITP.js</title>
 </head>
 <body>
 
-<h1>ITP.js</h1>
-<p>Hello.</p>
+<p>ITP.js</p>
+
+<input id="instr" size="35">
+<button id="button" onclick="javascript:inputToConsole()">INPUT</button>
+
+
+<p id="output"></p>
+
+
+<script src='../lib/front/repl.try.js'></script>
+
+<script>
+// most code are copied and paste
+// because I have no idea how HTML works
+
+document.getElementById("instr").addEventListener("keyup", function(event) {
+  // Cancel the default action, if needed
+  event.preventDefault();
+  // Number 13 is the "Enter" key on the keyboard
+  if (event.keyCode === 13) {
+    // Trigger the button element with a click
+    document.getElementById("button").click();
+  }
+});
+
+
+function inputToConsole() {
+    var inputbox = document.getElementById('instr');
+    output(inputbox.value);
+    Console(inputbox.value);
+}
+
+function Console(cmd) {
+  debug("newcmd");
+  consoleCo.run(cmd);
+}
+
+function output(str) {
+    var k = document.getElementById('output');
+    k.innerHTML = str + '<br>' + k.innerHTML;
+}
+
+// import {debug, warn} from "../globalDef"
+// import {consoleCons} from "./repl.ITP3"
+
+var stdoutput = function stdoutput(str){return (output(str), str)}
+var stderr = stdoutput;
+var debug = stdoutput;
+
+
+var consoleCo = consoleCons(stdoutput, stderr);
+
+consoleCo.run(""); // Initialization.
+
+
+
+</script>
+
 
 </body>
 </html>

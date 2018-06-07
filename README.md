@@ -1,12 +1,11 @@
 # ITP.js
-A Theorem Prover. Thanks to *Type Theory and Formal Proof* and *flow.js*. 
+A Theorem Prover. Thanks to *Type Theory and Formal Proof* and *flow.js* and *node-fiber*. 
 
 
 [![Build Status](https://travis-ci.org/DKXXXL/ITP.js.svg?branch=master)](https://travis-ci.org/DKXXXL/ITP.js)
 [![Coverage Status](https://coveralls.io/repos/github/DKXXXL/ITP.js/badge.svg)](https://coveralls.io/github/DKXXXL/ITP.js)
 
-[Website.](https://dkxxxl.github.io/ITP.js/index.html) or [Try me.](https://dkxxxl.github.io/ITP.js/tryme.html)
-
+[Website.](https://dkxxxl.github.io/ITP.js/index.html).
 ## Build
 ``` 
 > git clone ... 
@@ -39,3 +38,8 @@ A Theorem Prover. Thanks to *Type Theory and Formal Proof* and *flow.js*.
         * when you are proving a (forall ...) format. It will put the quantified variable into the context.
     * apply [*term*] [*term*].
         * Now you have two subgoals, prove the first term and prove the second term respectively.
+    * conv [*term*].
+        * type-level calculation (change the goal into term if delta-beta equivalent)
+    * You can do [ *goal number* : *tactic* | ...], to transform to several goals simultoneously.
+* Interesting fact : This program was designed and implemented before I have ever learned javascript, 
+which make the design pattern very straightforward, and surprisingly, javascript doesn't have first-class continuation, which leads to the node-fiber and no-browerser supported.
