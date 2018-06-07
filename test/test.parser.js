@@ -1,7 +1,7 @@
 const jsc = require("jsverify");
 const _ = require("underscore");
 
-import {langTerm, langCommand, langTactic, langTTactic, langInstructionGen} from "../src/front/parser.ITP3"
+import {langTerm, langCommand, langTactic, langTTactic, langInstruction} from "../src/front/parser.ITP3"
 import {printf} from "../src/globalDef"
 
 
@@ -52,8 +52,8 @@ const sanityCheckOfTactic = [
     () =>jsc.property("metavar", () => tacP("a.")[0][1].type === "metavar"),
 ]
 
-const instrPgen = langInstructionGen(x => undefined, x => undefined);
-const instrP = (x) => instrPgen.all.tryParse(x);
+
+const instrP = (x) => langInstruction.all.tryParse(x);
 const sanityCheckofInstr = [
     () => jsc.property("addDef", () => _.isEqual(instrP("addDef 1:**."),{type : "addDef", name : ("1"), ty : {type : "U1"}})),
     () => jsc.property("addDef", () => _.isEqual(instrP("addAxiom A:*."),{type : "addAxiom", name : ("A"), ty : {type : "U0"}})),

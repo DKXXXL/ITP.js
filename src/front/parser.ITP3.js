@@ -113,7 +113,7 @@ const langTTactic = ParserC.createLanguage({
                 ).sepBy1(ParserC.string("|").wrap(optWS, optWS)).wrap(ParserC.string("["), ParserC.string(")")).wrap(optWS, optWS)
 })
 
-const langInstructionGen = (defaultprintDef, defaultprintScript) => ParserC.createLanguage({
+const langInstruction = ParserC.createLanguage({
     all: (r) => ParserC.alt(r.addDef, r.addAxiom, r.addTactic, r.printScript, r.printDef, r.printTacs, r.terminate)
                         .skip(ParserC.string(".").wrap(optWS, optWS)),
     addDef : () => ParserC.seqMap(
@@ -131,8 +131,8 @@ const langInstructionGen = (defaultprintDef, defaultprintScript) => ParserC.crea
                 langTactic.tacs.wrap(optWS, optWS),
                 (name, binding) =>( {type : "addTactic", name : name.n, ty : binding})
             ),
-    printScript : () => ParserC.string("printScript").wrap(optWS,optWS).result({type : "printScript", outMethod : defaultprintScript}),
-    printDef : () => ParserC.string("printDef").wrap(optWS,optWS).result({type : "printDef", outMethod : defaultprintDef}),
+    printScript : () => ParserC.string("printScript").wrap(optWS,optWS).result({type : "printScript"}),
+    printDef : () => ParserC.string("printDef").wrap(optWS,optWS).result({type : "printDef"}),
     printTacs : () => ParserC.string("printTacs").wrap(optWS,optWS).result({type : "printTacs"}),
     terminate : () => ParserC.string("terminate").wrap(optWS,optWS).result({type : "terminate"})
 })
@@ -152,13 +152,11 @@ const parseToTTact = (src) => {
             return ret;
         }
     }
-const parseToInstrGen = (pdef, pscript) => {
-        const langInstr = langInstructionGen(pdef, pscript);
-        return (src) => {
+const parseToInstr =  (src) => {
         let ret = undefined;
         while(true) {
             try{
-                ret = langInstr.all.tryParse(src());
+                ret = langInstruction.all.tryParse(src());
             } catch(err) {
                 warn("Parsing Instruction failed");
                 warn(JSON.stringify(err));
@@ -169,12 +167,12 @@ const parseToInstrGen = (pdef, pscript) => {
             return ret;
         }
     }
-}
+
 
 module.exports = {
     parseToTTact,
-    parseToInstrGen,
-    langTerm, langCommand, langTactic, langTTactic, langInstructionGen
+    parseToInstr,
+    langTerm, langCommand, langTactic, langTTactic, langInstruction
 };
 
 

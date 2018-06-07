@@ -1,9 +1,11 @@
 # ITP.js
-A Theorem Prover. Thanks to *Type Theory and Formal Proof* and *flow.js*.
+A Theorem Prover. Thanks to *Type Theory and Formal Proof* and *flow.js*. 
+
 
 [![Build Status](https://travis-ci.org/DKXXXL/ITP.js.svg?branch=master)](https://travis-ci.org/DKXXXL/ITP.js)
 [![Coverage Status](https://coveralls.io/repos/github/DKXXXL/ITP.js/badge.svg)](https://coveralls.io/github/DKXXXL/ITP.js)
 
+[Website.](https://dkxxxl.github.io/ITP.js/index.html) or [Try me.](https://dkxxxl.github.io/ITP.js/tryme.html)
 
 ## Build
 ``` 
@@ -11,7 +13,7 @@ A Theorem Prover. Thanks to *Type Theory and Formal Proof* and *flow.js*.
 ...
 > npm run buildtest
 ...
-> node .\lib\front\repl.ITP.js
+> node .\lib\front\node.interface.js
     # Now you are running the program 
 ``` 
 

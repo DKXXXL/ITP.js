@@ -156,8 +156,8 @@ type INSTRUCTION =
     {type : "addDef", name : ID, ty : pttm}
     | {type : "addAxiom", name : ID, ty : pttm}
     | {type : "addTactic", name : ID, tac : Tactic}
-    | {type : "printScript", outMethod : string => typeof undefined}
-    | {type : "printDef", outMethod : DefinitionList => typeof undefined}
+    | {type : "printScript"}
+    | {type : "printDef"}
     | {type : "printTacs"}
     | {type : "terminate"}
 
@@ -190,10 +190,10 @@ const CONSOLE = (ioe : stdIO) : typeof undefined => {
         } else if(input.type === "addTactic") {
             AllTactics.push([input.name, input.tac]);
         } else if(input.type === "printScript") {
-            input.outMethod(ioe.scripts());
+            ioe.o(ioe.scripts());
         } else if(input.type === "printDef") {
             if(!pfChecker(AllDefinitions)) {ioe.e("Unexpected Internal Error. Cannot output definition."); continue;}
-            input.outMethod(AllDefinitions);
+            ioe.o(ppDefL(AllDefinitions));
         } else if(input.type === "printTacs"){
             ioe.o(prettyprintTacCtx(AllTactics));
         } 
