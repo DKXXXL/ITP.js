@@ -110,7 +110,7 @@ const langTTactic = ParserC.createLanguage({
                     NumberParser.wrap(optWS, optWS).skip(ParserC.string(":")),
                     langTactic.tacs.wrap(optWS, optWS),
                     (target, tactic) => [Number(target), tactic]
-                ).sepBy1(ParserC.string("|").wrap(optWS, optWS)).wrap(ParserC.string("["), ParserC.string(")")).wrap(optWS, optWS)
+                ).sepBy1(ParserC.string("|").wrap(optWS, optWS)).wrap(ParserC.string("["), ParserC.string("]")).wrap(optWS, optWS)
 })
 
 const langInstruction = ParserC.createLanguage({

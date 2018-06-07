@@ -50,6 +50,7 @@ const sanityCheckOfTactic = [
     () => jsc.property("seq", () => ((x) => tacP(" [idtac ; idtac].")[0][1].type === "seq")),
     () => jsc.property("let tac", () => tacP("lettac x := [ idtac ] in x.")[0][1].type === "let"),
     () =>jsc.property("metavar", () => tacP("a.")[0][1].type === "metavar"),
+    () => jsc.property("sanity - multi", () => (x =>( (_.isEqual(x, [[1, {type : "metavar", n: "a"}], [2 , {type : "cmds", t : {type : "idtac"}}]]))))(tacP("[1:a | 2: idtac].")) ),
 ]
 
 
