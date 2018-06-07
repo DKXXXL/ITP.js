@@ -62,8 +62,10 @@ const concat_ =<X>(f : Generator<X>, g : () => Generator<X>):Generator<X> => {
                                 };
                         };
 const joinGen = <X>(f : Generator<Generator<X>>) : Generator<X> => {
-    let current = f();
+    let firsttime = true;
+    let current = undefined;
     return () => {
+        if(firsttime === true) {current = f(); firsttime = false;}
         let r : Option<X> = undefined;
         while(current !== undefined) {
             r = current();
