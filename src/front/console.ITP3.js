@@ -25,7 +25,7 @@ type TContext = Dict<ID, Tactic>;
 // MEDIUM LEVEL : META TACTIC
 // A Tactic is a instruction that can be interpreted into (A function from PartialGoals to Commands := Actic)
 
-type Tactic = 
+export type Tactic = 
     {type : "cmds", t : Command} // apply same command to all of the current subgoal
     | {type : "seq", t0 : Tactic, t1 : Tactic}
     | {type : "let", name : ID, bind : Tactic, body : Tactic}
@@ -33,7 +33,7 @@ type Tactic =
 
 // A group of targeted tactic
 // number denote the goal number targeted
-type TTactic = Dict<number, Tactic>;
+export type TTactic = Dict<number, Tactic>;
 
 
 // TContext -> String
@@ -107,11 +107,11 @@ const prettyprintTacCtx = pprintDict((x:ID) => x.toString(), pprintTac);
 
 
 
-type stdIO = {i : Input<TTactic>, iI : Input<INSTRUCTION>, o : Output, e : Error, scripts : () => string};
+export type stdIO = {i : Input<TTactic>, iI : Input<INSTRUCTION>, o : Output, e : Error, scripts : () => string};
 
-type Input<K> = string => IO<K>;
-type Output = string => string;
-type Error = string => typeof undefined;
+export type Input<K> = string => IO<K>;
+export type Output = string => string;
+export type Error = string => typeof undefined;
 
 const inputAsGen = (i : Input<TTactic>) : IO<TTactic> => () => i("");
 
@@ -172,7 +172,7 @@ const PFCONSOLE =
 // UPPER LEVEL : CONSOLE
 // by addDef, we can enter proof mode(pf constructor)
 
-type INSTRUCTION = 
+export type INSTRUCTION = 
     {type : "addDef", name : ID, ty : pttm}
     | {type : "addAxiom", name : ID, ty : pttm}
     | {type : "addTactic", name : ID, tac : Tactic}

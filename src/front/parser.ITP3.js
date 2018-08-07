@@ -168,8 +168,15 @@ const parseToInstr =  (src) => {
         }
     }
 
+const parserForTTactic =
+    (s) =>  langTTactic.all.tryParse(s);
+
+const parserForInstr =
+    (s) => langInstruction.all.tryParse(s);
 
 module.exports = {
+    parserForTTactic,
+    parserForInstr,
     parseToTTact,
     parseToInstr,
     langTerm, langCommand, langTactic, langTTactic, langInstruction
