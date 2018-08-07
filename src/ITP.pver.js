@@ -5,7 +5,7 @@
 
 import type {pttm} from "./ITP2" 
 import {ideq, ppID} from './globalDef'
-import type {ID, Dict, Option, IO} from "./globalDef"
+import type {ID, Dict, Option, IO, GR} from "./globalDef"
 import {
     untyped_beta_conversion,
     has_type,
@@ -146,7 +146,7 @@ const pfChecker = (ctx : DefinitionList) : boolean => {
 // each array of commands is like a matrix transformation, than transform an array of partial goal into a new array of partial goal
 // the reason why it is partial goal is because the goal may have been accomplished
 const goaltransform = 
-    (ncmd : (PartialGoals) => IO<Commands>,warn: string => typeof undefined, cmd_ : Command, goal_ : Goal | true) : [PartialGoals, ArrayF<pttm, pttm>] => {
+    function* (ncmd : (PartialGoals) => IO<Commands>,warn: string => typeof undefined, cmd_ : Command, goal_ : Goal | true) : GR<[PartialGoals, ArrayF<pttm, pttm>]> {
     const cmd = cmd_;
     const donothing : ArrayF<pttm, pttm> = [1, x => x];
     if(goal_ === true) {
@@ -204,7 +204,8 @@ const goaltransform =
         // most special, it will hang up the current goal and star focusing on a particular partial goal
         // const term = pfconstructor(ncmd, warn, [goal])[0];
         // return [[true], [1, x => [term]]];
-        return ppfconstructor(cmd.streamOfCmd, warn, [goal]);
+        const ret_ = yield* ppfconstructor(cmd.streamOfCmd, warn, [goal]);
+        return ret_;
     } else if(cmd.type === "idtac") { 
         return [[goal], donothing];
     } else {
@@ -222,21 +223,32 @@ const goaltransform =
 // term finder in some sense
 // the core of lambdaD, though no correctness is assure and necessary -- all the correctness is based on ITP2 (Coc)
 const pfconstructor = 
-    function* (ncmd : (PartialGoals) => IO<Commands>, warn: string => typeof undefined, currentGoals : PartialGoals) : IO<Array<pttm>> {
+    function* (ncmd : (PartialGoals) => IO<Commands>, warn: string => typeof undefined, currentGoals : PartialGoals) : GR<Array<pttm>> {
     let nextcmds_ = yield* ncmd(currentGoals);
     while(nextcmds_.length !== currentGoals.length) {
         warn("Error: Command number not enough");
         nextcmds_ = yield* ncmd(currentGoals);
     }
     const nextcmds : Commands = nextcmds_;
-    const newGoals_IT : [PartialGoals, ArrayF<pttm, pttm>] = combine(nextcmds.map((cmd, index) => goaltransform(ncmd, warn, cmd, currentGoals[index])));
+    const newGoals_IT_ : Array<GR<[PartialGoals, ArrayF<pttm, pttm>]>> = 
+        nextcmds.map((cmd, index) => goaltransform(ncmd, warn, cmd, currentGoals[index]));
+    let newGoals_IT__ : Array<[PartialGoals, ArrayF<pttm, pttm>]> = [];
+    for(let each_new_goal of newGoals_IT_) {
+        const adding : [PartialGoals, ArrayF<pttm, pttm>] = yield* each_new_goal;
+        newGoals_IT__.push(adding);
+    }
+    const newGoals_IT = combine(newGoals_IT__);
+    // const newGoals_IT : [PartialGoals, ArrayF<pttm, pttm>] = 
+    //             combine(nextcmds.map((cmd, index) => 
+    //                             goaltransform(ncmd, warn, cmd, currentGoals[index])));
     const newGoals : PartialGoals = newGoals_IT[0];
     if(newGoals_IT[1][0] !== newGoals.length) {warn("Internal Error: Domain number incoincides with array element number");}
     const inverseTransform : Array<pttm> => Array<pttm> = newGoals_IT[1][1];
     if(newGoals.filter(x => x !== true).length === 0) {
         return inverseTransform(newGoals.map(x => ((undefined : any): pttm)));
     } else {
-        return inverseTransform(pfconstructor(ncmd, warn, newGoals));
+        const ret_ : Array<pttm> = yield* pfconstructor(ncmd, warn, newGoals);
+        return inverseTransform(ret_);
     }
 }
 
@@ -246,8 +258,8 @@ const pfconstructor =
 // will stop constructing when meet defocus
 // always return the term constructed with all effort
 const ppfconstructor = 
-    function* (ncmd : (PartialGoals) => Generator<any, Commands, any>, warn: string => typeof undefined, currentGoals : PartialGoals) : IO<[PartialGoals, ArrayF<pttm, pttm>]> {
-    let nextcmds_ = yield* ncmd(currentGoals);
+    function* (ncmd : (PartialGoals) => IO<Commands>, warn: string => typeof undefined, currentGoals : PartialGoals) : GR<[PartialGoals, ArrayF<pttm, pttm>]> {
+    let nextcmds_ = yield* ncmd(currentGoals)();
     if(nextcmds_[0].type === "defocus") {
         // the way to stop
         return [currentGoals, [currentGoals.length, x => x]];
@@ -257,7 +269,16 @@ const ppfconstructor =
         nextcmds_ = yield* ncmd(currentGoals);
     }
     const nextcmds : Commands = nextcmds_;
-    const newGoals_IT : [PartialGoals, ArrayF<pttm, pttm>] = combine(nextcmds.map((cmd, index) => goaltransform(ncmd, warn, cmd, currentGoals[index])));
+    const newGoals_IT_ : Array<GR<[PartialGoals, ArrayF<pttm, pttm>]>> = 
+        nextcmds.map((cmd, index) => goaltransform(ncmd, warn, cmd, currentGoals[index]));
+    let newGoals_IT__ : Array<[PartialGoals, ArrayF<pttm, pttm>]> = [];
+    for(let each_new_goal of newGoals_IT_) {
+        const adding : [PartialGoals, ArrayF<pttm, pttm>] = yield* each_new_goal;
+        newGoals_IT__.push(adding);
+    }
+    const newGoals_IT = combine(newGoals_IT__);
+
+//        combine(nextcmds.map((cmd, index) => goaltransform(ncmd, warn, cmd, currentGoals[index])));
     const newGoals : PartialGoals = newGoals_IT[0];
     if(newGoals_IT[1][0] !== newGoals.length) {warn("Internal Error: Domain number incoincides with array element number");}
     if(newGoals.filter(x => x !== true).length === 0) {

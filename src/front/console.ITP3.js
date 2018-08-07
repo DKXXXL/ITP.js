@@ -83,7 +83,7 @@ const tacticIntp = (tctx : TContext, tac_ : Tactic) : Generator_<Actic> => {
 // join is actually a flip makes (() => PG => CMDs ) -> (PG => () => CMDs), where the second 
 // parenthesis can be auto applied when PG is applied, makes it into (PG => CMDs)
 const __joinActic_endwithdefocus : (Generator_<Actic> => Actic) = gen => {
-            const infGen = endswith(x => Array(x.length).fill({type : "defocus"}), gen); 
+            const infGen = endswith(x => function*() {return Array(x.length).fill({type : "defocus"});}, gen); 
             return pgs => infGen()(pgs);
         }
 
