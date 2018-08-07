@@ -5,15 +5,17 @@
 // where includes information about Instructions, Targeted-Tactic, Tactic, 
 // which can be then translated into (PartialGoals => Commands) 
 
-import type {ID, Generator, Dict, Option} from "../globalDef"
-import {debug, ideq, ppID, concat, concat_, joinGen, mapGen, toArrayFillBlankWith, endswith, listGen, obeq} from "../globalDef"
+import type {ID, Generator_, Dict, Option, IO, GR} from "../globalDef"
+import {debug, ideq, ppID, concat, concat_, joinGen, mapGen, toArrayFillBlankWith, endswith, listGen, obeq,
+        constGer, gerDelay,  gerFlat, gen_to_ger, map_ger, ger_gen__ger
+        } from "../globalDef"
 import type {pttm} from "../ITP2" 
 import {pprintDict, ppPttm, _add_to_dict,_find_in_dict} from "../ITP2"
 import type {DefinitionList, Commands, Command, NewJudgement, Goal, Goals, PartialGoals, Context} from "../ITP.pver"
 import {pfconstructor,newtermChecker,pfChecker, ppCmd, ppCtx, ppDefL, defListToCtx} from "../ITP.pver"
 
 
-type Actic = PartialGoals => Commands;
+type Actic = PartialGoals => IO<Commands>;
 
 
 
@@ -49,15 +51,15 @@ const pprintTac = (x : Tactic) : string => {
 }
 
 
-const donothing : Generator<Actic> = listGen([s => Array(s.length).fill({type : "idtac"})])
+const donothing : Generator_<Actic> = listGen([s => constGer(Array(s.length).fill({type : "idtac"}))])
 // The interpreter of A single tactic
 // tactic has a property that it is not going to be exposed to the current goal number
 // so a single tactic will do things to all the possible goals
 // and only TTactic -- targeted tactic know things about goal number
-const tacticIntp = (tctx : TContext, tac_ : Tactic) : Generator<Actic> => {
+const tacticIntp = (tctx : TContext, tac_ : Tactic) : Generator_<Actic> => {
     const tac = tac_;
     if(tac.type === "cmds"){
-        return listGen([s => Array(s.length).fill(tac.t)]);
+        return listGen([s => constGer(Array(s.length).fill(tac.t))]);
     } else if(tac.type === "seq") {
         const tip = t => tacticIntp(tctx, t);
         return concat_(tip(tac.t0), () => tip(tac.t1));
@@ -76,11 +78,11 @@ const tacticIntp = (tctx : TContext, tac_ : Tactic) : Generator<Actic> => {
 
 
 // starting from here, code is elegant (I think) but ambiguous
-// the reason is due to Generator<> is a function with side-effect
+// the reason is due to Generator_<> is a function with side-effect
 
 // join is actually a flip makes (() => PG => CMDs ) -> (PG => () => CMDs), where the second 
 // parenthesis can be auto applied when PG is applied, makes it into (PG => CMDs)
-const __joinActic_endwithdefocus : (Generator<Actic> => Actic) = gen => {
+const __joinActic_endwithdefocus : (Generator_<Actic> => Actic) = gen => {
             const infGen = endswith(x => Array(x.length).fill({type : "defocus"}), gen); 
             return pgs => infGen()(pgs);
         }
@@ -88,15 +90,15 @@ const __joinActic_endwithdefocus : (Generator<Actic> => Actic) = gen => {
 // translate TTactic into Actic
 // actually, Tactic class is much easier to be translated
 // The reason TTactic can be translated is largely due to the "focus" command
-const ttacticIntp = (tctx : TContext, ttac_ : TTactic) : Generator<Actic> => {
+const ttacticIntp = (tctx : TContext, ttac_ : TTactic) : Generator_<Actic> => {
     const ttac = ttac_;
     const idtac : Command = ({type : "idtac"});
-    const dictofGen : Dict<number, Generator<Actic>> = ttac.map(x => [x[0], tacticIntp(tctx, x[1])]);
+    const dictofGen : Dict<number, Generator_<Actic>> = ttac.map(x => [x[0], tacticIntp(tctx, x[1])]);
 
     const arrayOfFocus : Dict<number, Command> = dictofGen.map(x => [x[0], __joinActic_endwithdefocus(x[1])])
                                                           .map(x => [x[0],{type : "focus", streamOfCmd : x[1]}])
     
-    return listGen([pgs => toArrayFillBlankWith(arrayOfFocus, pgs.length, idtac)]);
+    return listGen([pgs => constGer(toArrayFillBlankWith(arrayOfFocus, pgs.length, idtac))]);
 }
 
 const prettyprintTacCtx = pprintDict((x:ID) => x.toString(), pprintTac);
@@ -107,11 +109,11 @@ const prettyprintTacCtx = pprintDict((x:ID) => x.toString(), pprintTac);
 
 type stdIO = {i : Input<TTactic>, iI : Input<INSTRUCTION>, o : Output, e : Error, scripts : () => string};
 
-type Input<K> = string => K;
+type Input<K> = string => IO<K>;
 type Output = string => string;
 type Error = string => typeof undefined;
 
-const inputAsGen = (i : Input<TTactic>) : Generator<TTactic> => (x => i(""));
+const inputAsGen = (i : Input<TTactic>) : IO<TTactic> => () => i("");
 
 const ppPGs = (pg : PartialGoals) : string => 
     pg.map((x,index) => {
@@ -124,28 +126,46 @@ const ppPGs = (pg : PartialGoals) : string =>
 
 
 
+// const ger_gen_switch : <X>(p : IO<Generator_<X>>) => Generator_<IO<X>> = gerDelay;
+// const promise_actic_flat : (p : IO<Actic>) => Actic = 
+//     pg => function* () {
+//         return (gerDelay(p))(pg)
+//     }
+
 // the flatmap (joinGen) makes input into a generator of actic
 // because each tactic can deal with several times of interaction (a number of Commands)
 // we need to flatmap, and what's more, the envoke of input becomes implicit
-const interaction = (ioe : stdIO, tctx : TContext) : (PartialGoals => Commands) => {
-    const tacticInput : Generator<Actic> = joinGen(mapGen(y => ttacticIntp(tctx, y), inputAsGen(ioe.i)));
-    return s => {
+// Actic = (PartialGoals => IO<Commands>)
+const interaction = (ioe : stdIO, tctx : TContext) : (PartialGoals => IO<Commands>) => {
+    const tacticInput : IO<Actic> = 
+                    ger_gen__ger(
+                    map_ger(            // IO<Generator_<Actic>>
+                        y => ttacticIntp(tctx, y),
+                        inputAsGen(ioe.i) // : IO<TTactic>
+                    ));
+
+                    // joinGen(
+                    // gerDelay(
+                    // mapGen(
+                    //     y => map_ger(u => ttacticIntp(tctx, u), y) // : IO<Generator_<Actic>>
+                    //     ,inputAsGen(ioe.i) // : IO<TTactic>
+                    //     )));
+    return s => function* () {
         ioe.o(ppPGs(s));
-        let tI = tacticInput();
-        while(tI === undefined){
-            tI = tacticInput();
-        }
-        return tI(s);
-    }
+        let tI : Actic = yield* (tacticInput()); // Actic
+        let ret : Commands = yield* (tI(s)());
+        return ret;
+    };
 }
-const PFCONSOLE = (ioe : stdIO, tctx : TContext, dctx : DefinitionList, newty : pttm) : pttm => {
+const PFCONSOLE = 
+    function* (ioe : stdIO, tctx : TContext, dctx : DefinitionList, newty : pttm) : GR<pttm> {
     // here it's too stupid
     // const ctx : Context = dctx.map(x => [x[0], [(x[1][0] : pttm | "bottom" | false), x[1][1]]]);
     const ctx : Context = defListToCtx(dctx);
     debug("function PFCONSOLE, with pfconstructor, proof mode.")
-    const term = pfconstructor(interaction(ioe, tctx), ioe.e, [[ctx, newty]])[0];
+    const term = yield* pfconstructor(interaction(ioe, tctx), ioe.e, [[ctx, newty]]);
     debug("function PFCONSOLE return, back to normal mode.")
-    return term;
+    return (term[0]);
 }
 
 
@@ -165,13 +185,14 @@ type INSTRUCTION =
 const defaultprintDef = (o : string => typeof undefined) : (DefinitionList => typeof undefined) => (x => o(ppDefL(x)));
 const defaultprintScript = (o : string => typeof undefined) : (string => typeof undefined) => (s => o(s));
 
-const CONSOLE = (ioe : stdIO) : typeof undefined => {
+const CONSOLE = 
+    function* (ioe : stdIO) : GR<typeof undefined> {
     let AllDefinitions : DefinitionList = [];
     let AllTactics : TContext = [];
     
     while(true){
         
-        const input : INSTRUCTION = ioe.iI("");
+        const input : INSTRUCTION = yield* ioe.iI("");
         
         // debug(input + " function CONSOLE");
         if(input.type === "terminate"){
@@ -179,7 +200,7 @@ const CONSOLE = (ioe : stdIO) : typeof undefined => {
         } else if(input.type === "addDef") {
             // Into Proof Mode
             ioe.o("Enter Proof Mode.");
-            const tm = PFCONSOLE(ioe, AllTactics, AllDefinitions, input.ty);
+            const tm = yield* PFCONSOLE(ioe, AllTactics, AllDefinitions, input.ty);
             ioe.o("Back to Instruction Mode.");
             if(!newtermChecker(AllDefinitions, input.name, tm, input.ty)) {ioe.e("Define Failed."); continue;}
             AllDefinitions.push([input.name, [tm, input.ty]]);
@@ -199,7 +220,7 @@ const CONSOLE = (ioe : stdIO) : typeof undefined => {
         } 
     }
 
-    return undefined;
+    return (undefined);
 }
 
 
