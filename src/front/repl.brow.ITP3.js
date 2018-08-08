@@ -20,6 +20,10 @@ const scriptGet : (() => string) = () => INPUTSCRIPT;
 //     return ret;
 // }
 // type Input<K> = string => IO<K>;
+
+const parserTTactic : string => TTactic = parserForTTactic;
+const parserInstr : string => INSTRUCTION = parserForInstr;
+
 const ask_for_input : Input<string> = 
     (s) => 
         function*() {
@@ -37,7 +41,7 @@ const ask_for_input_tactic : Input<TTactic> =
             try{
                 
                 ret_ = yield* ask_for_input(s)();
-                ret = parserForTTactic(ret_);
+                ret = parserTTactic(ret_);
             } catch(err) {
                 warn("Parsing TTactic failed");
                 warn(JSON.stringify(err));
@@ -58,7 +62,7 @@ const ask_for_input_instr : Input<INSTRUCTION> =
             try{
                 ret_ = yield* ask_for_input(s)();
 
-                ret = parserForInstr(ret_);
+                ret = parserInstr(ret_);
                 if(ret === undefined) {
                     continue;
                 }

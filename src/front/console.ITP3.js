@@ -113,7 +113,7 @@ export type Input<K> = string => IO<K>;
 export type Output = string => string;
 export type Error = string => typeof undefined;
 
-const inputAsGen = (i : Input<TTactic>) : IO<TTactic> => () => i("");
+const inputAsGen = (i : Input<TTactic>) : IO<TTactic> => i("");
 
 const ppPGs = (pg : PartialGoals) : string => 
     pg.map((x,index) => {
@@ -192,7 +192,7 @@ const CONSOLE =
     
     while(true){
         
-        const input : INSTRUCTION = yield* ioe.iI("");
+        const input : INSTRUCTION = yield* ioe.iI("")();
         
         // debug(input + " function CONSOLE");
         if(input.type === "terminate"){

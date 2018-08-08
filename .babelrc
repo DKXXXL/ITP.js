@@ -1,5 +1,13 @@
 {
-  "presets": ["flow", "es2015", "env"],
+  "presets": [
+    [
+      "env", {
+        "targets": {
+          "node": "current"
+        }
+      }
+    ],"flow"
+  ],
   "env": {
     "test": {
       "plugins": [

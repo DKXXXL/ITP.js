@@ -147,7 +147,7 @@ const gen_not_null = <X> (g : Generator_<X>) :(() => X) =>
 const gerDelay = <X,Y>(g :IO<X => Y>) : (X => IO<Y>) => 
     x =>
         function*() {
-            let f = yield* g;
+            let f = yield* g();
             return f(x);
         }
 
@@ -164,8 +164,8 @@ const gerDelay = <X,Y>(g :IO<X => Y>) : (X => IO<Y>) =>
 // IO<X> = () => Generator<X, X, any>
 const gerFlat = <X> (g : IO<IO<X>>) : IO<X> => 
         function *() {
-            let f = yield* g();
-            let x = yield* f;
+            const f : IO<X> = yield* g();
+            const x : X = yield* f();
             return x;
         }
 
@@ -180,7 +180,7 @@ const gen_to_ger = <X> (g : Generator_<X>) : IO<X> =>
 
 const map_ger = <X, Y> (f : X => Y, g : IO<X>) : IO<Y> =>
     function* () {
-        let c = yield* g;
+        let c : X = yield* g();
         return f(c);
     }
 

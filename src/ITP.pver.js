@@ -224,10 +224,10 @@ const goaltransform =
 // the core of lambdaD, though no correctness is assure and necessary -- all the correctness is based on ITP2 (Coc)
 const pfconstructor = 
     function* (ncmd : (PartialGoals) => IO<Commands>, warn: string => typeof undefined, currentGoals : PartialGoals) : GR<Array<pttm>> {
-    let nextcmds_ = yield* ncmd(currentGoals);
+    let nextcmds_ = yield* ncmd(currentGoals)();
     while(nextcmds_.length !== currentGoals.length) {
         warn("Error: Command number not enough");
-        nextcmds_ = yield* ncmd(currentGoals);
+        nextcmds_ = yield* ncmd(currentGoals)();
     }
     const nextcmds : Commands = nextcmds_;
     const newGoals_IT_ : Array<GR<[PartialGoals, ArrayF<pttm, pttm>]>> = 
@@ -259,14 +259,14 @@ const pfconstructor =
 // always return the term constructed with all effort
 const ppfconstructor = 
     function* (ncmd : (PartialGoals) => IO<Commands>, warn: string => typeof undefined, currentGoals : PartialGoals) : GR<[PartialGoals, ArrayF<pttm, pttm>]> {
-    let nextcmds_ = yield* ncmd(currentGoals)();
+    let nextcmds_ = yield* (ncmd(currentGoals)());
     if(nextcmds_[0].type === "defocus") {
         // the way to stop
         return [currentGoals, [currentGoals.length, x => x]];
     }
     while(nextcmds_.length !== currentGoals.length) {
         warn("Error: Command number not enough");
-        nextcmds_ = yield* ncmd(currentGoals);
+        nextcmds_ = yield* (ncmd(currentGoals)());
     }
     const nextcmds : Commands = nextcmds_;
     const newGoals_IT_ : Array<GR<[PartialGoals, ArrayF<pttm, pttm>]>> = 
