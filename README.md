@@ -5,7 +5,9 @@ A Theorem Prover. Thanks to *Type Theory and Formal Proof* and *flow.js* and *no
 [![Build Status](https://travis-ci.org/DKXXXL/ITP.js.svg?branch=master)](https://travis-ci.org/DKXXXL/ITP.js)
 [![Coverage Status](https://coveralls.io/repos/github/DKXXXL/ITP.js/badge.svg)](https://coveralls.io/github/DKXXXL/ITP.js)
 
-[Website.](https://dkxxxl.github.io/ITP.js/index.html).
+[Website.](https://dkxxxl.github.io/ITP.js/index.html)
+
+[Try me.](https://dkxxxl.github.io/ITP.js/tryme2.html)
 ## Build
 ``` 
 > git clone ... 

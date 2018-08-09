@@ -47,8 +47,9 @@ consoleCo.next(); // Initialization.
 
 function inputToConsole() {
     var inputbox = document.getElementById('instr');
-    output(inputbox.value);
+    output(">> ".concat(inputbox.value));
     Console(inputbox.value);
+    output("");
 }
 
 function Console(cmd) {
