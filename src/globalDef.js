@@ -191,11 +191,11 @@ const ger_gen__ger = <X> (g : IO<Generator_<X>>) : IO<X> => {
             if(r === undefined) {
                 r = yield* f;
             }
-            let ret : X = (r.value)();
+            let ret : X | UDEF = (r)();
             while(ret === undefined) {
                 f = g();
                 r = yield* f;
-                ret = (r.value)();
+                ret = (r)();
             }
             return ret;
         };
