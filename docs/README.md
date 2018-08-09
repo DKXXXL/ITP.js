@@ -1,11 +1,13 @@
 # ITP.js
-A Theorem Prover. Thanks to *Type Theory and Formal Proof* and *flow.js* and *node-fiber*. 
+A Theorem Prover. Thanks to *Type Theory and Formal Proof* and *flow.js*.
 
 
 [![Build Status](https://travis-ci.org/DKXXXL/ITP.js.svg?branch=master)](https://travis-ci.org/DKXXXL/ITP.js)
 [![Coverage Status](https://coveralls.io/repos/github/DKXXXL/ITP.js/badge.svg)](https://coveralls.io/github/DKXXXL/ITP.js)
 
-[Website.](https://dkxxxl.github.io/ITP.js/index.html).
+[Website.](https://dkxxxl.github.io/ITP.js/index.html)
+
+[Try me.](https://dkxxxl.github.io/ITP.js/tryme2.html)
 ## Build
 ``` 
 > git clone ... 
@@ -41,5 +43,3 @@ A Theorem Prover. Thanks to *Type Theory and Formal Proof* and *flow.js* and *no
     * conv [*term*].
         * type-level calculation (change the goal into term if delta-beta equivalent)
     * You can do [ *goal number* : *tactic* | ...], to transform to several goals simultoneously.
-* Interesting fact : This program was designed and implemented before I have ever learned javascript, 
-which make the design pattern very straightforward, and surprisingly, javascript doesn't have first-class continuation, which leads to the node-fiber and no-browerser supported.

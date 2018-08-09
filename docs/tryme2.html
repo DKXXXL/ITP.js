@@ -37,7 +37,7 @@ function output(str) {
 
 var stdoutput = function stdoutput(str){return (output(str), str)}
 var stderr = stdoutput;
-var debug = stdoutput;
+var debug = function (s) {return s;} // stdoutput;
 
 
 var consoleCo = repl.consoleIO(stdoutput, stderr)();
