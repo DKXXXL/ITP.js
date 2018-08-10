@@ -14,7 +14,7 @@ A Theorem Prover. Thanks to *Type Theory and Formal Proof* and *flow.js* and *no
 ...
 > npm run buildtest
 ...
-> node .\lib\front\node.interface.js
+> node .\lib\front\node.brow.interface.js
     # Now you are running the program 
 ``` 
 
@@ -43,5 +43,3 @@ A Theorem Prover. Thanks to *Type Theory and Formal Proof* and *flow.js* and *no
     * conv [*term*].
         * type-level calculation (change the goal into term if delta-beta equivalent)
     * You can do [ *goal number* : *tactic* | ...], to transform to several goals simultoneously.
-* Interesting fact : This program was designed and implemented before I have ever learned javascript, 
-which make the design pattern very straightforward, and surprisingly, javascript doesn't have first-class continuation, which leads to the node-fiber and no-browerser supported.

@@ -1,5 +1,5 @@
 # ITP.js
-A Theorem Prover. Thanks to *Type Theory and Formal Proof* and *flow.js*.
+A Theorem Prover. Thanks to *Type Theory and Formal Proof* and *flow.js* and *node-fiber*. 
 
 
 [![Build Status](https://travis-ci.org/DKXXXL/ITP.js.svg?branch=master)](https://travis-ci.org/DKXXXL/ITP.js)
@@ -14,7 +14,7 @@ A Theorem Prover. Thanks to *Type Theory and Formal Proof* and *flow.js*.
 ...
 > npm run buildtest
 ...
-> node .\lib\front\node.interface.js
+> node .\lib\front\node.brow.interface.js
     # Now you are running the program 
 ``` 
 
