@@ -1,7 +1,7 @@
 //@flow
 
 const debug = (s : string) => undefined // console.log(s + "\n");
-const warn = (s: string) => process.stderr.write(s);
+const warn = (s: string) => undefined
 
 export type ID = string;
 export type UDEF = typeof undefined;

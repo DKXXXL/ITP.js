@@ -32,7 +32,8 @@ const ask_for_input : Input<string> =
             return ret;
         }
 
-const ask_for_input_tactic : Input<TTactic> =
+const ask_for_input_tactic : Error => Input<TTactic> =
+    (warn) =>
     (s) => 
         function*() {
             let ret_:string = "";
@@ -53,7 +54,8 @@ const ask_for_input_tactic : Input<TTactic> =
         return ret;
 
     }
-const ask_for_input_instr : Input<INSTRUCTION> =
+const ask_for_input_instr : Error => Input<INSTRUCTION> =
+    (warn) =>
     (s) => 
         function*() {
             let ret_:string = "";
@@ -81,8 +83,8 @@ const consoleIO : (Output, Error) => IO<typeof undefined> =
     (stdoutput, stderr) => 
         () => CONSOLE(
             {
-                i : ask_for_input_tactic,
-                iI :ask_for_input_instr,
+                i : ask_for_input_tactic(stderr),
+                iI :ask_for_input_instr(stderr),
                 o : stdoutput,
                 e : stderr,
                 scripts : scriptGet,
