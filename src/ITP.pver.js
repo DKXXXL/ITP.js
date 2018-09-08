@@ -148,10 +148,12 @@ const pfChecker = (ctx : DefinitionList) : boolean => {
 
 //////////// Core of the Interactive Thm Prover, a helper to construct a proof
 
-// for a specific partial goal, it may transform into several subgoals, then we have to flatmap them
-// each array of commands is like a matrix transformation, than transform an array of partial goal into a new array of partial goal
+// for a specific partial goal, it may transform into several newly-needed subgoals, then we have to flatmap them
+// each array of commands is like a matrix transformation, then transform an array of partial goal into a new array of newly-needed  partial goal
 // the reason why it is partial goal is because the goal may have been accomplished
-// return a new array of goals (Partial Goals) and the achieved construction (ArrayF<..,..>)
+// return a newly-needed array of goals (Partial Goals) and the achieved construction method (ArrayF<..,..>) 
+// and if those construction method is applied on the terms(construction) of newly added goal, we can get the term of the original goals
+//    so after one call, all we need is the construction of newly-needed goals
 // If a goal is constructed, then the corresponding place in that array is true; and the corresponding place in ArrayF would be a constant function return the construction)
 const goaltransform = 
     function* (ncmd : (PartialGoals) => IO<Commands>,warn: string => typeof undefined, cmd_ : Command, goal_ : Goal | true) : GR<[PartialGoals, ArrayF<pttm, pttm>]> {
