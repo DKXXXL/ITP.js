@@ -61,11 +61,12 @@ export type PartialGoals = Array<Goal | true>
 type NewContext = Context;
 export type NewJudgement = pttm;
 export type Commands = Array<Command>;
-type ArrayF<Domain, Codomain> = [number, Array<Domain> => Array<Codomain>]; // size of doman * function
+type ArrayF<Domain, Codomain> = [number, Array<Domain> => Array<Codomain>]; // tuple of  [size of doman of the function, function]
 export type DefinitionList = Dict<ID, [pttm | "bottom", pttm]>;
 const ppDefL : DefinitionList => string = pprintDict(ppID, x => " := " + ppPttm(x[0]) + " : " + ppPttm(x[1]));
 
 // homomorphism
+// make two arrayF into one by expanding domain and codomain
 const connect = <D,C>(f : ArrayF<D,C>, g: ArrayF<D,C>) : ArrayF<D,C> => {
     const f_ = (a : Array<D>) : Array<C> => f[1](a.slice(0, f[0]));
     const g_ = (a : Array<D>) : Array<C> => g[1](a.slice(f[0], f[0] + g[0]));
@@ -88,6 +89,8 @@ export type Command =
     
 const ppCmd = (x : Command) : string => JSON.stringify(x)
 
+// flatmap the (parital goals, arrayF) array into one tuple
+// like a 'join' in the monad
 const combine = (gs : Array<[PartialGoals, ArrayF<pttm, pttm>]>) : [PartialGoals, ArrayF<pttm, pttm>] => {
     return gs.reduce((x,y) => [x[0].concat(y[0]), connect(x[1], y[1])]);
 }
@@ -142,9 +145,14 @@ const pfChecker = (ctx : DefinitionList) : boolean => {
             newtermChecker(oldlist, ctx[ctx.length-1][0], ctx[ctx.length-1][1][0], ctx[ctx.length-1][1][1]);
 }
 
+
+//////////// Core of the Interactive Thm Prover, a helper to construct a proof
+
 // for a specific partial goal, it may transform into several subgoals, then we have to flatmap them
 // each array of commands is like a matrix transformation, than transform an array of partial goal into a new array of partial goal
 // the reason why it is partial goal is because the goal may have been accomplished
+// return a new array of goals (Partial Goals) and the achieved construction (ArrayF<..,..>)
+// If a goal is constructed, then the corresponding place in that array is true; and the corresponding place in ArrayF would be a constant function return the construction)
 const goaltransform = 
     function* (ncmd : (PartialGoals) => IO<Commands>,warn: string => typeof undefined, cmd_ : Command, goal_ : Goal | true) : GR<[PartialGoals, ArrayF<pttm, pttm>]> {
     const cmd = cmd_;
@@ -163,6 +171,7 @@ const goaltransform =
         return [[[addCtx(goal_ty.bind, [false, goal_ty.iT], ctx), goal_ty.body]],
                 [1, x => [{type : "lambda", bind : goal_ty.bind, iT : goal_ty.iT, body : x[0]}] ]];
     } else if (cmd.type === "apply") {
+        // a command to construct a term by application of a function with proper arguments
         const claimed_fty = cmd.caller;
         const claimed_xty = cmd.callee;
         
@@ -178,11 +187,13 @@ const goaltransform =
                  [2,x => [{type: "apply", fun : x[0], arg: x[1]}]]
                 ];
     } else if (cmd.type === "check") {
+        // directly give out the term
         const claimed_term = cmd.term;
         const claimed_term_ty = has_type(ctx_list, claimed_term);
         if(!obeq(claimed_term_ty,goal_ty)) {warn("Check failed. Type Inconsistent."); return [[goal], donothing];}
         return [[true], [1, x => [claimed_term]]];
     } else if (cmd.type === "conv") {
+        // type equivalence -- same type
         const claimed_ty = cmd.newform;
         // now beta, delta conversion
         const ty_claimed_ty = has_type(ctx_list, claimed_ty);
@@ -191,6 +202,7 @@ const goaltransform =
         return [[[ctx, claimed_ty]], [1, x => x]];
         
     } else if (cmd.type === "let") {
+        // give a term a name
         const new_add_term = cmd.term;
         const new_add_term_ty = has_type(ctx_list, new_add_term);
         if(new_add_term_ty === undefined) {warn("Local Define failed. Unsupported type"); return [[goal], donothing];}
@@ -201,7 +213,8 @@ const goaltransform =
                         }
                         ]] ];
     } else if(cmd.type === "focus") {
-        // most special, it will hang up the current goal and star focusing on a particular partial goal
+        // most special, it will hang up the current goal and star focusing on one particular partial goal
+        // and use the streamOfCmd on it, and every streamOfCmd would always have 'defocus' at the end, which makes focus stop
         // const term = pfconstructor(ncmd, warn, [goal])[0];
         // return [[true], [1, x => [term]]];
         const ret_ = yield* ppfconstructor(cmd.streamOfCmd, warn, [goal]);
@@ -230,23 +243,30 @@ const pfconstructor =
         nextcmds_ = yield* ncmd(currentGoals)();
     }
     const nextcmds : Commands = nextcmds_;
+    // construct things for each goal
     const newGoals_IT_ : Array<GR<[PartialGoals, ArrayF<pttm, pttm>]>> = 
         nextcmds.map((cmd, index) => goaltransform(ncmd, warn, cmd, currentGoals[index]));
     let newGoals_IT__ : Array<[PartialGoals, ArrayF<pttm, pttm>]> = [];
+    // open the IO<..> decorator
     for(let each_new_goal of newGoals_IT_) {
         const adding : [PartialGoals, ArrayF<pttm, pttm>] = yield* each_new_goal;
         newGoals_IT__.push(adding);
     }
+    // each construction is a tuple of an array of newly needed goals and a adjoint transformation function(ArrayF)
+    // combine those arrays and functions
     const newGoals_IT = combine(newGoals_IT__);
-    // const newGoals_IT : [PartialGoals, ArrayF<pttm, pttm>] = 
-    //             combine(nextcmds.map((cmd, index) => 
-    //                             goaltransform(ncmd, warn, cmd, currentGoals[index])));
+                       
     const newGoals : PartialGoals = newGoals_IT[0];
+    // checking adjoint transformation is proper
     if(newGoals_IT[1][0] !== newGoals.length) {warn("Internal Error: Domain number incoincides with array element number");}
+    // inverseTranform is exactly transformation, because it transform newly added into original, thus an 'inverse'
     const inverseTransform : Array<pttm> => Array<pttm> = newGoals_IT[1][1];
     if(newGoals.filter(x => x !== true).length === 0) {
+        // All constructed, call the constant function to get all the current terms of the inputting goal
         return inverseTransform(newGoals.map(x => ((undefined : any): pttm)));
     } else {
+        // Some are not constructed, a recursive call to get all the constructed items on the newly needed goals
+        // And use the adjoint function to transform the newly needed goals into originally needed goals
         const ret_ : Array<pttm> = yield* pfconstructor(ncmd, warn, newGoals);
         return inverseTransform(ret_);
     }
@@ -257,6 +277,7 @@ const pfconstructor =
 // partial proof constructor
 // will stop constructing when meet defocus
 // always return the term constructed with all effort
+// maybe replace pfconstructor because pfconstructor cannot terminate the process as the user want, unless they complete the construction
 const ppfconstructor = 
     function* (ncmd : (PartialGoals) => IO<Commands>, warn: string => typeof undefined, currentGoals : PartialGoals) : GR<[PartialGoals, ArrayF<pttm, pttm>]> {
     let nextcmds_ = yield* (ncmd(currentGoals)());
@@ -269,21 +290,28 @@ const ppfconstructor =
         nextcmds_ = yield* (ncmd(currentGoals)());
     }
     const nextcmds : Commands = nextcmds_;
+    // construct things for each goal
     const newGoals_IT_ : Array<GR<[PartialGoals, ArrayF<pttm, pttm>]>> = 
         nextcmds.map((cmd, index) => goaltransform(ncmd, warn, cmd, currentGoals[index]));
     let newGoals_IT__ : Array<[PartialGoals, ArrayF<pttm, pttm>]> = [];
+    // open the IO<..> decorator
     for(let each_new_goal of newGoals_IT_) {
         const adding : [PartialGoals, ArrayF<pttm, pttm>] = yield* each_new_goal;
         newGoals_IT__.push(adding);
     }
+    // each construction is a tuple of an array of newly needed goals and a adjoint transformation function(ArrayF)
+    // combine those arrays and functions
     const newGoals_IT = combine(newGoals_IT__);
 
-//        combine(nextcmds.map((cmd, index) => goaltransform(ncmd, warn, cmd, currentGoals[index])));
     const newGoals : PartialGoals = newGoals_IT[0];
     if(newGoals_IT[1][0] !== newGoals.length) {warn("Internal Error: Domain number incoincides with array element number");}
     if(newGoals.filter(x => x !== true).length === 0) {
+        // All constructed.. no need to go on the construction
+        // relieve the streamOfCmd and give back the construction
         return newGoals_IT;
     }
+    // Some are not constructed, a recursive call to get all the constructed items on the newly needed goals
+    // And use the adjoint function to transform the newly needed goals into originally needed goals
     const retGoals_IT = yield* ppfconstructor(ncmd, warn, newGoals);
     return [retGoals_IT[0], [retGoals_IT[1][0], x => newGoals_IT[1][1](retGoals_IT[1][1](x))]];
     // if(newGoals_IT[1][0] !== newGoals.length) {warn("Internal Error: Domain number incoincides with array element number");}
